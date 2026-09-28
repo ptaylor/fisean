@@ -18,11 +18,13 @@ without rewriting the other:
 | Part | What it does |
 | --- | --- |
 | **Indexer** | Walks a directory hierarchy offline and writes an index: metadata, classifications, keywords, a summary, and the extracted stills. |
-| **Browser** | A web app that reads only the index and lists the library by date, keyword, style and content, with the stills as the browsing surface. |
+| **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality, with the stills as the browsing surface. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
 
-The index format is the contract between them: the browser never decodes media
-and never reads the media directory, and the indexer serves no UI. The source
-videos are left untouched, so the library can stay read-only.
+The index format is the contract between them, specified in
+[docs/index-format.md](docs/index-format.md) so that either half can be replaced.
+The browser never decodes media — the single exception, serving the original
+bytes for playback, is documented there. The source videos are left untouched, so
+the library can stay read-only.
 
 ## Formats
 

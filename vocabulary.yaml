@@ -1,0 +1,126 @@
+# vocabulary.yaml — the labels the indexer asks for.
+#
+# This file is project source, and it is data rather than code on purpose: the
+# labels are meant to be edited after looking at real results, and editing them
+# must not mean editing the indexer. Changing this file and re-running the
+# indexer is the whole loop for improving classification.
+#
+# Rules:
+#
+# - **Every label must be one you would actually click.** This library is a few
+#   hundred videos, not a few million images; a label nobody would filter by is
+#   noise in the interface. Expect to delete a third of these.
+# - **`weak: true`** marks a label that must never be a hard filter. Age and
+#   activity are not reliably readable from a sampled frame, so those labels are
+#   hints the interface shows with that caveat.
+# - **`min_frames`** is how many sampled frames must agree before a label is
+#   recorded at all. It exists because a single frame of a bicycle parked in the
+#   background of a garden party should not label the video "bicycle".
+# - **`threshold`** is the zero-shot similarity below which the label is dropped.
+#   These are starting guesses: calibrate them by running one batch and looking
+#   at where the scores actually sit.
+# - Quality is **not** in this file. "Dark", "blurry" and "still" are thresholds
+#   over the numbers in `analysis`, derived by the browser, so they can be
+#   re-tuned without a re-index. See docs/index-format.md, rule 5.
+
+version: 1
+
+zero_shot:
+  # ---------------------------------------------------------------- setting
+  - { text: outdoors,          group: setting, threshold: 0.30, min_frames: 3 }
+  - { text: indoors,           group: setting, threshold: 0.30, min_frames: 3 }
+  - { text: beach,             group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: sea or lake,       group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: garden,            group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: park or playground, group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: street or town,    group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: city skyline,      group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: countryside,       group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: forest or woods,   group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: mountains,         group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: snow,              group: setting, threshold: 0.35, min_frames: 2 }
+  - { text: swimming pool,     group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: inside a house,    group: setting, threshold: 0.30, min_frames: 3 }
+  - { text: in a car or vehicle, group: setting, threshold: 0.34, min_frames: 3 }
+  - { text: in a museum or gallery, group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: at the zoo or farm, group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: campsite or tent,  group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: party or celebration, group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: sports field or pitch, group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: night or darkness, group: setting, threshold: 0.35, min_frames: 2 }
+
+  # ------------------------------------------------------------ who is there
+  - { text: people,            group: who, threshold: 0.28, min_frames: 3 }
+  - { text: a group of people, group: who, threshold: 0.30, min_frames: 2 }
+  - { text: a crowd,           group: who, threshold: 0.34, min_frames: 2 }
+  - { text: children,          group: who, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: a baby or toddler, group: who, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: an adult,          group: who, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: a dog,             group: who, threshold: 0.34, min_frames: 2 }
+  - { text: a cat,             group: who, threshold: 0.34, min_frames: 2 }
+  - { text: horses or farm animals, group: who, threshold: 0.34, min_frames: 2 }
+
+  # ------------------------------------------------------------ what is there
+  - { text: a bicycle or bike, group: what, threshold: 0.32, min_frames: 2 }
+  - { text: a car,             group: what, threshold: 0.32, min_frames: 2 }
+  - { text: a train,           group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a boat or ship,    group: what, threshold: 0.34, min_frames: 2 }
+  - { text: an aeroplane,      group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a caravan or campsite, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a ball,            group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a kite,            group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a sledge or snowman, group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a birthday cake,   group: what, threshold: 0.34, min_frames: 2 }
+  - { text: presents or gifts, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: balloons,          group: what, threshold: 0.36, min_frames: 2 }
+  - { text: fireworks,         group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a christmas tree,  group: what, threshold: 0.36, min_frames: 2 }
+
+  # ---------------------------------------------------------------- activity
+  # All weak: an activity is a sequence, and the index samples still frames.
+  - { text: children playing,  group: activity, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: playing sport,     group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: swimming,          group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: cycling,           group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: walking or hiking, group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: paddling at the water's edge, group: activity, threshold: 0.36, min_frames: 2, weak: true }
+  - { text: eating or a meal,  group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: opening presents,  group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: dancing or performing, group: activity, threshold: 0.34, min_frames: 2, weak: true }
+
+# The detector's class list is fixed by the model (the COCO 80). These are the
+# classes worth keeping; the rest are recorded but not surfaced, because nobody
+# browses a home-video library by "dining table".
+detector:
+  classes:
+    person:      { group: who,  min_frames: 3 }
+    bicycle:     { group: what, min_frames: 1 }
+    car:         { group: what, min_frames: 1 }
+    motorbike:   { group: what, min_frames: 1 }
+    bus:         { group: what, min_frames: 1 }
+    train:       { group: what, min_frames: 1 }
+    boat:        { group: what, min_frames: 1 }
+    aeroplane:   { group: what, min_frames: 1 }
+    cat:         { group: who,  min_frames: 1 }
+    dog:         { group: who,  min_frames: 1 }
+    horse:       { group: who,  min_frames: 1 }
+    sheep:       { group: who,  min_frames: 1 }
+    cow:         { group: who,  min_frames: 1 }
+    bird:        { group: who,  min_frames: 1 }
+    sports ball: { group: what, min_frames: 1 }
+    kite:        { group: what, min_frames: 1 }
+    surfboard:   { group: what, min_frames: 1 }
+    skateboard:  { group: what, min_frames: 1 }
+    teddy bear:  { group: what, min_frames: 1 }
+    cake:        { group: what, min_frames: 1 }
+    bench:       { group: what, min_frames: 2 }
+    tent:        { group: what, min_frames: 1 }
+
+# Prompts scored alongside the labels purely to calibrate thresholds: a label
+# that scores as highly on these as on the real frames is not measuring anything.
+calibration:
+  negatives:
+    - a plain wall
+    - a test pattern
+    - a screenshot of text
+    - an empty room

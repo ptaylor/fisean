@@ -40,12 +40,15 @@ layout preference: either half must be replaceable without rewriting the other.
 
 Rules that keep the seam honest:
 
-- The browser never invokes `ffmpeg`, never decodes media, and never reads the
-  media directory. If it needs a fact, that fact belongs in the index.
+- The browser never invokes `ffmpeg` and never decodes media. It does not read
+  the media directory either, with **one documented exception**: serving the
+  original bytes for playback, read-only. If it needs a *fact*, that fact belongs
+  in the index.
 - The indexer serves no HTTP and owns no UI.
-- The index format is a **versioned, documented contract**, in its own document
-  once the format is settled. Letting indexer internals leak into the browser is
-  exactly what would cost us the freedom to swap the backend.
+- The index format is a **versioned, documented contract** —
+  [docs/index-format.md](docs/index-format.md), which both halves are held to.
+  Letting indexer internals leak into the browser is exactly what would cost us
+  the freedom to swap the backend.
 - Re-indexing one file must not require touching the others.
 - The index and the stills live outside the media directory, which stays usable
   read-only — it may be on a disk the tool has no business writing to.
@@ -69,9 +72,13 @@ Numbered, as agreed, so that a later change can be checked against them.
 ### Browser
 
 7. A browser-based web app over the index.
-8. Filters and lists the library by date, keyword, style and content.
+8. Filters and lists the library along four axes: **when** (date), **where**
+   (GPS, and a place label where one is known), **who/what** (people, animals,
+   objects, activity), and **quality** (sharp, dark, still).
 9. Shows the stills as the primary browsing surface, and looks good doing it.
-10. Reads only the index — see the rules above.
+10. Plays a video where the browser can decode it, and otherwise offers a
+    one-click **copy of the full path** so it can be opened in a player.
+11. Reads only the index, save for the one documented playback exception.
 
 ### Non-goals
 
@@ -82,19 +89,48 @@ Numbered, as agreed, so that a later change can be checked against them.
 
 ## Open questions
 
-Recorded rather than guessed at:
+The four questions that gated this file are answered, and the answers live in
+[docs/index-format.md](docs/index-format.md): "style" is dropped, the
+classification scheme is a hand-editable vocabulary plus a detector class list,
+the index lives outside the media directory, and the browser plays video where
+the browser can decode it. What remains open:
 
-- **What "style" means.** It is a browse dimension, so it needs a definition
-  before anything can be indexed by it. Genre? Footage type — home movie,
-  animation, screen recording, surveillance?
-- **The classification scheme** — free tags, topics, or a fixed taxonomy — and
-  where keywords come from: filename and container metadata, or visual
-  embeddings, or both.
-- **Where the index lives**: beside the media, or in a central cache. This
-  decides whether the media directory is ever written to, and whether
-  `.gitignore` needs patterns for the index and stills.
-- **Whether the browser plays video**, or only shows stills.
-- **The index format**, which is the contract the split rests on.
+- **Place names from coordinates.** GPS is wanted and is stored, but turning
+  coordinates into "Cornwall, UK" needs a bundled dataset or a network call, and
+  the indexer is offline by requirement. Names come from `overrides.yaml`, or
+  from a later opt-in step that is explicitly not part of the offline run.
+- **How many stills per video**, and what to do about short or static clips — a
+  15-second clip of a birthday cake may want one still, not six.
+- **Still size and format**: full resolution, or scaled to a documented maximum
+  width. At a few thousand videos the stills become the largest thing the tool
+  creates.
+- **Hand-picked cover stills**, which is a classification decision that is
+  plainly the user's rather than the indexer's.
+- **Whether the label thresholds are tuned by hand.** The values in
+  `vocabulary.yaml` are starting guesses; running one batch over the real library
+  and looking at where the scores actually fall is the obvious next step.
+
+## The index contract — decisions recorded
+
+- **The generated index is JSON, not YAML.** The browser reads it with
+  `JSON.parse`, so the front end keeps zero dependencies; YAML would put a parser
+  inside the browser half. JSON also has no indentation traps and no implicit
+  typing surprises.
+- **YAML for what a human edits**: `vocabulary.yaml` (labels — project source,
+  in this repo) and `overrides.yaml` (corrections — kept beside the index,
+  outside the repo, because it is one person's library data and may name places).
+- **One JSON file per asset, plus a manifest**, so re-indexing one video rewrites
+  one file and the counters, never its neighbours.
+- **The index stores measurements and labels; the browser derives facets.**
+  "Dark", "blurry" and "still" are thresholds over numbers, so re-tuning them
+  must not require a re-index.
+- **The `media_root` is the only absolute path in the index**, so an index
+  survives the library being moved.
+- **Still selection is by scene change and then by score**, never by keyframe
+  flags — see the traps under Target formats.
+- **Playback is expected to fail for most of the legacy library** (browsers do
+  not decode DV, MPEG-1, H.263 in 3GP, or Sorenson H.263 in FLV), which is why
+  copy-full-path is a primary action rather than a fallback.
 
 ## Target formats
 
@@ -156,9 +192,21 @@ actually been measured:
   (MIT) the stronger but frozen alternative. Either way, the `thumbnail` filter
   plus the quality filters above can choose the frame within each shot.
 
-The decisions that actually gate the design are the **catalogue dimensions**
-(what "style" means, and what the classification scheme is) and the **index
-format** — not the decode layer, which is settled.
+- **Object detection:** Ultralytics YOLO (the YOLO26 family, COCO 80 classes).
+  Its licence is **AGPL-3.0**, verified in the repository — compatible with ours
+  only because of the relicensing above, and it would have been a blocker under
+  MIT.
+- **Zero-shot labels and embeddings:** `open_clip` (CLIP and SigLIP2
+  checkpoints; the SigLIP2 models report roughly 82–84% zero-shot ImageNet
+  accuracy in that project's own table). Check its LICENSE file before adopting —
+  the GitHub page links to it rather than stating it.
+- **Model weights are a one-time download.** Requirement 1 says the indexer runs
+  offline, so that means *no network at index time*: weights are fetched
+  beforehand, once, and their directory earns a `.gitignore` entry when it exists.
+
+The design questions this section used to list — the browse dimensions and the
+classification scheme — are settled. See the requirements above, and
+[the index format document](docs/index-format.md) for the rest.
 
 ## Keeping this file current — required
 
