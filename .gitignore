@@ -1,0 +1,12 @@
+# OS metadata
+.DS_Store
+
+# Editor metadata
+.vscode/
+.idea/
+*.swp
+*~
+
+# Nothing else yet — the technology stack is not chosen. Add the standard
+# patterns for each language, package manager and build tool here in the same
+# change that introduces it. See AGENTS.md, "Keeping .gitignore current".

@@ -30,3 +30,8 @@ a new technology, and the required form of AI attribution.
 
 This README and [AGENTS.md](AGENTS.md) were written with GitHub Copilot
 (DeepSeek V4 Flash).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+

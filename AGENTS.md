@@ -39,9 +39,8 @@ with:
   project-specific conventions, and links to authoritative documentation.
 - Any new **install / build / run / test / lint** commands, under
   "Development Commands".
-- Standard ignore patterns for it in **`.gitignore`** (build output, dependency
-  and cache directories, local env files, editor and OS metadata), also in the
-  same change.
+- Standard ignore patterns for it in **`.gitignore`** — see the next section,
+  which applies to every change, not only to new technologies.
 
 Do not let this file go stale — it is the source of truth for how to work in this
 repo. If you are unsure of the current best practice for a technology, check the
@@ -63,6 +62,38 @@ corrected one with an explanation does not.
   - ...
 - **Docs**: link(s) to official documentation.
 ```
+
+## Keeping `.gitignore` current — required
+
+`.gitignore` is part of a change, never a follow-up to it. When a change creates
+files that should not be committed, the patterns go in **the same commit** — a
+cached thumbnail committed by accident is much harder to remove than a line is
+to add.
+
+Keep current, at minimum:
+
+- **Tool and dependency output**: build directories, package caches, virtual
+  environments, downloaded models and sample media, generated index files.
+- **Local state**: config and env files (`*.env`, `.env.local`), log files, and
+  anything naming this machine or a user's home directory.
+- **Editor and OS metadata**: `.DS_Store`, `.vscode/`, `.idea/`, `*.swp`.
+
+Rules:
+
+- Prefer the official patterns published for the technology over invented ones;
+  check the tool's own documentation rather than guessing.
+- Group patterns by reason, each under a comment saying which tool or platform it
+  belongs to, so the next reader can tell what a pattern is for.
+- **Never** ignore editor tooling by reflex where the team may want it shared: an
+  ignore rule is a commitment, and adding an un-ignore afterwards (`!.vscode/…`)
+  is confusing. Ignore the specific local artefacts, not the whole directory, when
+  that distinction matters.
+- **Never commit secrets** — ignore the file that holds them. If one is committed
+  by accident, say so in the commit that removes it rather than deleting it
+  quietly, because the history still has it.
+- The failure to watch for is the opposite of the usual one: ignoring a file the
+  tool needs at run time. If it is needed to run or to build, it is source and it
+  belongs in git.
 
 ## Development Commands
 
