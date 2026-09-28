@@ -56,6 +56,11 @@ Rules that keep the seam honest:
   original bytes for playback, read-only. If it needs a *fact*, that fact belongs
   in the index.
 - The indexer serves no HTTP and owns no UI.
+- **The entry point dispatches; it does not implement.** `fisean.py` maps a
+  subcommand to a program and `exec`s it, so signals, exit codes and output are
+  the command's own, and neither half can creep into the other by way of a shared
+  entry point. A later tool is a new subcommand, not a new branch inside the
+  browser.
 - The index format is a **versioned, documented contract** —
   [docs/index-format.md](docs/index-format.md), which both halves are held to.
   Letting indexer internals leak into the browser is exactly what would cost us
@@ -306,8 +311,10 @@ Rules:
 
 | Path | What it is |
 | --- | --- |
+| `fisean.py` | the `fisean` command: one entry point that dispatches to the halves, and implements neither |
 | `browse.py` | the browser half: CLI and HTTP server, nothing else |
 | `static/` | its interface — `index.html`, `app.css`, `app.js`, served from disk |
+| `install.sh` | symlinks `fisean` into `$BIN` (default `~/bin`) and checks that it runs |
 | `fixtures/` | the synthetic library the browser is developed against — see [fixtures/README.md](fixtures/README.md) |
 | `docs/index-format.md` | the index contract, version 1 |
 | `vocabulary.yaml` | the labels the indexer will ask for: project source, hand-edited |
@@ -359,10 +366,20 @@ honest when it is also a file boundary.
 python3 fixtures/make_fixtures.py        # rebuild the synthetic media, stills and index
 python3 fixtures/make_fixtures.py --check
 
-python3 browse.py                        # the fixture index, on 127.0.0.1:8765
-python3 browse.py --index DIR --port 9000 --no-open
-python3 browse.py --index DIR --media-root /Volumes/other/media
+./install.sh                              # symlink fisean into ~/bin
+BIN=/usr/local/bin ./install.sh           # elsewhere; a system path needs sudo
+
+fisean open DIR                           # serve the index in DIR, open a browser
+fisean browse DIR                         # the same command, second spelling
+fisean browse DIR --port 9000 --no-open
+
+python3 fisean.py browse fixtures/index   # the same thing without installing
+python3 browse.py --index fixtures/index  # the browser half on its own
 ```
+
+`DIR` may be the index directory itself (the one holding `manifest.json`) or a
+library root with an `index/` subdirectory; both are accepted, and with no DIR
+the committed fixture is used. Anything after `DIR` is passed straight through.
 
 The browser needs nothing but Python. `ffmpeg` and ImageMagick (`magick`) are
 needed only to rebuild the fixtures. An edit to `static/app.css` or

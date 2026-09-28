@@ -12,11 +12,21 @@ interface today — it reads a synthetic fixture library of twelve invented vide
 until the indexer is written.
 
 ```sh
-python3 browse.py            # opens http://127.0.0.1:8765/
+./install.sh                 # puts the fisean command in ~/bin
+fisean browse DIR            # serve the index in DIR and open it
+fisean open DIR              # the same command, under its other name
 ```
 
-Nothing to install: the browser half is one Python file using only the standard
-library, plus a `static/` directory holding its stylesheet and script.
+Or without installing anything:
+
+```sh
+python3 fisean.py browse DIR
+python3 fisean.py browse     # the committed fixture, for a look around
+```
+
+`DIR` is either the index directory itself (the one holding `manifest.json`) or a
+library root with an `index/` subdirectory in it — both are accepted. Options
+after `DIR` go straight to the browser: `fisean browse DIR --port 9000 --no-open`.
 
 ## Two parts
 
