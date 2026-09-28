@@ -15,9 +15,11 @@ commit that changes them.
 1. **The browser reads the index, and nothing else.** The single exception is
    playback — see section 7 — and it is narrowly drawn: bytes are served, never
    decoded.
-2. **`media_root` is the only absolute path in the index.** Everything else is
-   relative to it, with POSIX separators, so an index survives the library being
-   moved or the index being copied to another machine.
+2. **`media_root` is the only path in the index that may be absolute**, and it may
+   also be relative — resolved against the index directory — so an index can
+   travel with its media. Everything else is relative to it, with POSIX
+   separators, so an index survives the library being moved or copied to another
+   machine.
 3. **`null` means "not known", never "probably not".** A field that could not be
    measured is `null`. No defaults that look like data.
 4. **Every derived fact carries provenance**: which model, which version, which
@@ -66,6 +68,14 @@ live in the repo (`vocabulary.yaml`).
 | `models` | array, required | `{ "name", "version", "licence" }` per model used, including detector and any embedder |
 | `vocabulary` | object, optional | `{ "name": "vocabulary.yaml", "sha256": "…" }`, so a reader can tell whether the labels reflect the current vocabulary |
 | `errors` | array, optional | per-asset failures: `{ "path", "stage", "message" }`. An unreadable file must be recorded, not silently dropped |
+| `assets` | array of strings, optional | asset ids. When absent, the browser lists `videos/` for `*.json` instead, so an indexer may leave it out |
+
+Two things the browser needs that are deliberately **not** in the index. Asset
+ids come from `assets` above or from listing `videos/`. And the absolute media
+path — needed to build a path for the clipboard, since `media_root` may be
+relative — is resolved by the browser half and served to its own interface at
+`/config.json`. That endpoint is part of the browser, not the format: the index
+must not gain a second copy of a path that can be derived.
 
 ## 4. `videos/<id>.json`
 

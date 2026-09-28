@@ -1,14 +1,22 @@
-# videos
+# físeán
 
 Analyse and classify the contents of video files, and extract the stills that
 represent them, so that a library of videos can be browsed visually instead of
-by filename.
+by filename. *Físeán* is Irish for *video*.
 
 ## Status
 
-Nothing is implemented yet, and the technology stack is not chosen. There is
-nothing to install and no commands to run: this README describes the intended
-tool, not working software.
+**The browser half runs; the indexer does not exist yet.** You can look at the
+interface today — it reads a synthetic fixture library of twelve invented videos
+(see [fixtures/README.md](fixtures/README.md)), so everything on screen is fake
+until the indexer is written.
+
+```sh
+python3 browse.py            # opens http://127.0.0.1:8765/
+```
+
+Nothing to install: the browser half is a single Python file using only the
+standard library.
 
 ## Two parts
 
@@ -17,7 +25,7 @@ without rewriting the other:
 
 | Part | What it does |
 | --- | --- |
-| **Indexer** | Walks a directory hierarchy offline and writes an index: metadata, classifications, keywords, a summary, and the extracted stills. |
+| **Indexer** | Walks a directory hierarchy offline and writes an index: metadata, classifications, keywords, a summary, and the extracted stills. **Not written yet.** |
 | **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality, with the stills as the browsing surface. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
 
 The index format is the contract between them, specified in
@@ -25,6 +33,10 @@ The index format is the contract between them, specified in
 The browser never decodes media — the single exception, serving the original
 bytes for playback, is documented there. The source videos are left untouched, so
 the library can stay read-only.
+
+Because it reads JSON and nothing else, the browser half has no machine-learning
+dependencies at all: the heavy work belongs to the indexer, where it can be slow
+and repeated without slowing down the interface.
 
 ## Formats
 

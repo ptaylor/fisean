@@ -6,12 +6,22 @@ Instructions for any human or AI agent working in this repository.
 for extracting the stills that represent them, so that a library of videos can
 be browsed visually instead of by filename.
 
+The project is called **físeán** (Irish for *video*). The name carries its
+síneadh fada in prose and in the interface title; file names, commands and
+identifiers stay ASCII — `browse.py` now, `fisean-index` later — because accents
+in executable names and paths are a portability tax that buys nothing.
+
 ## Status
 
-**Nothing is implemented yet, and the technology stack is not chosen.** This
-file therefore records process and intent only. The concrete sections —
-technology, layout, commands, checks — are added as the decisions are actually
-made (see "Keeping this file current").
+The **browser half exists and runs**: `browse.py`, one standard-library Python
+file that serves the interface and reads an index. It is developed against the
+synthetic fixture library in [`fixtures/`](fixtures/README.md), so every number
+on screen describes invented footage.
+
+**The indexer does not exist.** The requirements, the format and the stack notes
+below are decisions and intentions, not descriptions of working code. The one
+exception is FFmpeg, which is measured rather than assumed — see the candidate
+stack.
 
 ## What the tool is for
 
@@ -124,13 +134,23 @@ the browser can decode it. What remains open:
 - **The index stores measurements and labels; the browser derives facets.**
   "Dark", "blurry" and "still" are thresholds over numbers, so re-tuning them
   must not require a re-index.
-- **The `media_root` is the only absolute path in the index**, so an index
-  survives the library being moved.
+- **The `media_root` is the only path in the index that may be absolute**, and it
+  may be relative, resolved against the index directory — which is what lets the
+  committed fixture work after being cloned anywhere. So an index survives the
+  library being moved.
 - **Still selection is by scene change and then by score**, never by keyframe
   flags — see the traps under Target formats.
 - **Playback is expected to fail for most of the legacy library** (browsers do
   not decode DV, MPEG-1, H.263 in 3GP, or Sorenson H.263 in FLV), which is why
   copy-full-path is a primary action rather than a fallback.
+- **The browser resolves what the index cannot state.** The absolute media path
+  is derived from `media_root` and served to the interface at `/config.json`;
+  asset ids come from `manifest.assets` or from listing `videos/`. Both are
+  browser-half behaviour, and `/config.json` is deliberately *not* part of the
+  format: a derived value must not be stored twice.
+- **The browser half was built against the fixture index**, before the indexer
+exists, so that the contract was proved implementable first. Everything it shows
+is invented footage until the indexer replaces the fixture.
 
 ## Target formats
 
@@ -276,16 +296,92 @@ Rules:
   tool needs at run time. If it is needed to run or to build, it is source and it
   belongs in git.
 
+## Layout
+
+| Path | What it is |
+| --- | --- |
+| `browse.py` | the browser half: CLI, HTTP server and the entire interface in one file |
+| `fixtures/` | the synthetic library the browser is developed against — see [fixtures/README.md](fixtures/README.md) |
+| `docs/index-format.md` | the index contract, version 1 |
+| `vocabulary.yaml` | the labels the indexer will ask for: project source, hand-edited |
+| `README.md` | the user-facing description of the tool |
+
+The indexer will be a sibling file, not a module inside `browse.py`: the two
+halves are separate programs by requirement, and the split is easier to keep
+honest when it is also a file boundary.
+
+## Technology Stack
+
+### Python (standard library only)
+
+- **Role**: the language of both halves. The browser half is `browse.py`:
+  argument parsing, the HTTP server, the range-request handler and the whole
+  front end as `PAGE_CSS`, `PAGE_JS` and `PAGE_TEMPLATE`. No build step, no
+  third-party import, nothing to install.
+- **Version**: Python 3.9 or newer; developed against 3.14.6.
+  `from __future__ import annotations` keeps the newer annotation spellings legal
+  on the older interpreters.
+- **Best Practices**:
+  - **One file, no dependencies.** Do not add a `static/` directory, a second
+    module for the browser half, or a package layout. The heavy dependencies
+    (PyTorch, the label models) belong to the indexer, and keeping the browser
+    free of them is the whole reason the interface reads JSON.
+  - The interface is embedded as strings, so a change to `PAGE_CSS`, `PAGE_JS` or
+    `PAGE_TEMPLATE` needs the second gate below — `py_compile` cannot see inside
+    them.
+  - Build DOM with `createElement` and `textContent`. Never `innerHTML` with
+    anything that came from the index: a label or summary is data, and treating it
+    as markup would make the index an injection vector.
+  - Never block the page with `window.prompt` or `alert`; a modal is a worse
+    failure than the thing it reports.
+  - `ThreadingHTTPServer`, so a slow media read cannot block the interface, and
+    `--no-open` exists so a check can run without hijacking a browser.
+  - Values the interface needs but the index must not carry are substituted at
+    build time (the supported index versions) or served (the resolved media root),
+    never copied into a second place where they can drift.
+- **Docs**: https://docs.python.org/3/library/http.server.html ·
+  https://docs.python.org/3/library/mimetypes.html
+
 ## Development Commands
 
-None yet. Record the toolchain commands here as soon as they exist — how to
-install dependencies, build, run the tool over a sample video, and test.
+```sh
+python3 fixtures/make_fixtures.py        # rebuild the synthetic media, stills and index
+python3 fixtures/make_fixtures.py --check
+
+python3 browse.py                        # the fixture index, on 127.0.0.1:8765
+python3 browse.py --index DIR --port 9000 --no-open
+python3 browse.py --index DIR --media-root /Volumes/other/media
+```
+
+The browser needs nothing but Python. `ffmpeg` and ImageMagick (`magick`) are
+needed only to rebuild the fixtures.
 
 ## Checks before committing
 
-No test suite yet. Once there is one, every change runs it in full, and the
-commands that gate a commit (formatting, linting, type checking, tests) belong in
-this section. Prefer checks that can be run non-interactively from a terminal.
+There is no test suite. Two gates must pass, and the second is not optional:
+**`py_compile` does not look inside the embedded JavaScript.**
+
+```sh
+python3 -m py_compile browse.py
+
+python3 -c 'import importlib.util, sys; s = importlib.util.spec_from_file_location("b", "browse.py"); m = importlib.util.module_from_spec(s); sys.modules["b"] = m; s.loader.exec_module(m); open("/tmp/fisean-page.js", "w").write(m.PAGE_JS.replace("__INDEX_VERSIONS__", "[1]"))' \
+  && node --check /tmp/fisean-page.js
+```
+
+Then look at it, because the gates only prove the code parses:
+
+```sh
+python3 browse.py --no-open    # then exercise what you changed in a browser
+```
+
+The layout depends on CSS that no compiler checks, and the interface is
+JavaScript whose failures only appear when it runs. Two browser-side mistakes
+already cost time in this repo — a version check that referenced a Python
+constant, and a facet whose chip labels were built from the wrong field of a
+tuple — and both were invisible to the gates above.
+
+The fixtures must also regenerate cleanly: running `make_fixtures.py` twice
+should leave `git status` unchanged.
 
 ## Licence — AGPL-3.0-or-later
 
