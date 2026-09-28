@@ -55,14 +55,16 @@
       "score": 0.64,
       "faces": 0,
       "reason": "sharpest frame of the single shot",
-      "path": "stills/6c8a3f29-img5512/01.jpg"
+      "path": "stills/6c8a3f29-img5512/01.jpg",
+      "cover": true
     },
     {
       "at_s": 10.9,
       "score": 0.6,
       "faces": 0,
       "reason": "second-highest score, same shot",
-      "path": "stills/6c8a3f29-img5512/02.jpg"
+      "path": "stills/6c8a3f29-img5512/02.jpg",
+      "cover": false
     }
   ],
   "source": {

@@ -53,14 +53,16 @@
       "score": 0.52,
       "faces": 1,
       "reason": "sharpest frame of the single shot",
-      "path": "stills/0e6b3d55-clip0007/01.jpg"
+      "path": "stills/0e6b3d55-clip0007/01.jpg",
+      "cover": true
     },
     {
       "at_s": 190.2,
       "score": 0.48,
       "faces": 0,
       "reason": "second-highest score, same shot",
-      "path": "stills/0e6b3d55-clip0007/02.jpg"
+      "path": "stills/0e6b3d55-clip0007/02.jpg",
+      "cover": false
     }
   ],
   "source": {

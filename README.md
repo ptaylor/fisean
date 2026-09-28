@@ -26,7 +26,7 @@ without rewriting the other:
 | Part | What it does |
 | --- | --- |
 | **Indexer** | Walks a directory hierarchy offline and writes an index: metadata, classifications, keywords, a summary, and the extracted stills. **Not written yet.** |
-| **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality, with the stills as the browsing surface. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
+| **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality — as a grid of covers or a list with larger stills, showing every extracted still rather than only the cover. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
 
 The index format is the contract between them, specified in
 [docs/index-format.md](docs/index-format.md) so that either half can be replaced.

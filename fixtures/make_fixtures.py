@@ -479,12 +479,26 @@ def build_media(record: dict, log: list[str]) -> None:
 
 
 def build_stills(record: dict, log: list[str]) -> list[dict]:
+    """Write the stills for one asset, in time order, with one marked as cover.
+
+    Two rules from docs/index-format.md, section 5: `stills` is a timeline, so it
+    is written in ascending `at_s`, and the cover is marked explicitly rather than
+    being whichever entry comes first. The cover here is simply the highest score,
+    which is what a real indexer is expected to do; a hand-picked cover would just
+    be the same flag set by `overrides.yaml` instead.
+    """
     fixture = record["_fixture"]
+    # The palettes and captions are written alongside the specs, so they have to
+    # be sorted with them or the still files would not match their own captions.
+    ordered = sorted(
+        zip(record["stills"], fixture["palettes"], fixture["captions"]),
+        key=lambda row: row[0]["at_s"],
+    )
+    best = max(range(len(ordered)), key=lambda i: ordered[i][0]["score"]) if ordered else -1
+
     stills = []
-    for index, (spec, palette, caption) in enumerate(
-        zip(record["stills"], fixture["palettes"], fixture["captions"]), start=1
-    ):
-        relative = Path("stills") / record["id"] / f"{index:02d}.jpg"
+    for index, (spec, palette, caption) in enumerate(ordered):
+        relative = Path("stills") / record["id"] / f"{index + 1:02d}.jpg"
         target = INDEX_DIR / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         args = [
@@ -498,7 +512,7 @@ def build_stills(record: dict, log: list[str]) -> list[dict]:
         ]
         run(["magick", *args, str(target)])
         log.append(f"{target.relative_to(REPO_ROOT)}\n    {reproducible('magick', args, target)}")
-        stills.append({**spec, "path": relative.as_posix()})
+        stills.append({**spec, "path": relative.as_posix(), "cover": index == best})
     return stills
 
 

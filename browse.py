@@ -169,19 +169,62 @@ main { display: flex; align-items: flex-start; }
 }
 .strip img:hover { opacity: 1; border-color: var(--dimmer); }
 .strip .more { font-size: 11.5px; color: var(--dimmer); }
+
+/* --------------------------------------------------------------- list view */
+#grid.layout-list { grid-template-columns: 1fr; gap: 10px; }
+.row {
+  display: flex; gap: 14px; padding: 12px; align-items: flex-start;
+  background: var(--panel); border: 1px solid var(--line-soft);
+  border-radius: var(--radius); cursor: pointer;
+  transition: border-color 120ms ease;
+}
+.row:hover { border-color: var(--dimmer); }
+.row[data-selected=true] { border-color: var(--accent); }
+.row-cover {
+  flex: 0 0 208px; width: 208px; height: 117px; border-radius: 8px;
+  overflow: hidden; background: #0a0c0e;
+  display: flex; align-items: center; justify-content: center;
+}
+.row-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.row-cover .none { color: var(--dimmer); font-size: 12px; text-align: center; padding: 8px; }
+/* A row has the width to show the other stills at a size worth looking at,
+   which is the whole reason the second layout exists. */
+.row-stills { display: flex; flex-wrap: wrap; gap: 5px; flex: 0 0 218px; width: 218px; }
+.row-stills img {
+  width: 104px; height: 58px; object-fit: cover; border-radius: 6px;
+  opacity: 0.78; border: 1px solid transparent; cursor: pointer;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+.row-stills img:hover { opacity: 1; border-color: var(--accent); }
+.row-meta { flex: 1; min-width: 0; }
+.row-meta .name { font-size: 14.5px; margin-bottom: 4px; }
+.row-meta .tags { margin-top: 8px; }
+.row-meta .path {
+  margin-top: 8px; background: none; border: none; padding: 0;
+  color: var(--dimmer); font-size: 11.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@media (max-width: 1100px) {
+  .row-stills { flex-basis: 109px; width: 109px; }
+  .row-stills img { width: 52px; height: 29px; }
+}
+@media (max-width: 780px) {
+  .row { flex-wrap: wrap; }
+  .row-cover { flex-basis: 100%; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+  .row-stills { flex-basis: 100%; width: 100%; }
+}
 .pill {
   background: rgba(8, 10, 12, 0.72); border-radius: 6px;
   padding: 2px 6px; font-size: 11.5px; color: var(--ink);
 }
 .pill.warn { color: var(--accent); }
 .card .body { padding: 10px 11px 12px; }
-.card .when { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--dim); }
-.card .when .approx { color: var(--accent); }
-.card .name {
-  margin-top: 3px; font-size: 13.5px; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
-}
-.card .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+/* Shared by the card and the row: both show the same metadata line, and scoping
+   these to .card is how the row silently fell back to body size. */
+.when { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--dim); }
+.when .approx { color: var(--accent); }
+.name { margin-top: 3px; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 .tag {
   font-size: 11.5px; color: var(--dim); background: var(--panel-2);
   border: 1px solid var(--line-soft); border-radius: 5px; padding: 1px 6px;
@@ -309,6 +352,7 @@ const state = {
   filters: new Map(),   // axis -> Set(values)
   query: '',
   sort: 'date-desc',
+  layout: 'grid',
   playing: false,
 };
 
@@ -362,7 +406,17 @@ function when(iso) {
 const year = iso => (iso ? String(iso).slice(0, 4) : 'undated');
 const fileName = path => String(path || '').split('/').pop();
 const container = a => (a.technical && a.technical.container) || '?';
-const cover = a => (a.stills && a.stills.length ? a.stills[0] : null);
+const cover = a => {
+  const stills = (a.stills || []).filter(s => s && s.path);
+  if (!stills.length) return null;
+  // Prefer the still the index marked as the cover. When none is marked, fall
+  // back to the highest score rather than to the first entry: the stills are in
+  // time order, so "first" would silently mean "opening shot"
+  // (docs/index-format.md, section 5).
+  const marked = stills.find(s => s.cover === true);
+  if (marked) return marked;
+  return stills.reduce((best, s) => (s.score || 0) > (best.score || 0) ? s : best, stills[0]);
+};
 const stillURL = rel => `/index/${rel.split('/').map(encodeURIComponent).join('/')}`;
 
 const playable = a => {
@@ -460,7 +514,7 @@ function render() {
 
   const rail = document.getElementById('rail');
   rail.replaceChildren(...AXES.map(renderFacet), renderClear());
-  renderGrid(items);
+  renderItems(items);
 }
 
 function renderFacet(axis) {
@@ -504,13 +558,69 @@ function renderClear() {
   }));
 }
 
-function renderGrid(items) {
+function renderItems(items) {
   const grid = document.getElementById('grid');
+  grid.className = state.layout === 'list' ? 'layout-list' : '';
   if (!items.length) {
     grid.replaceChildren(el('div', { class: 'empty-state', text: 'Nothing matches those filters.' }));
     return;
   }
-  grid.replaceChildren(...items.map(renderCard));
+  grid.replaceChildren(...items.map(state.layout === 'list' ? renderRow : renderCard));
+}
+
+// One video per row, so the stills can be shown at a size worth looking at. The
+// row is the same asset as a card, with room for the path and the device.
+function renderRow(asset) {
+  const best = cover(asset);
+  const bestIndex = best ? asset.stills.indexOf(best) : 0;
+  const extras = (asset.stills || []).filter(still => still !== best).slice(0, 6);
+
+  const coverBox = el('div', { class: 'row-cover' });
+  if (best) coverBox.append(el('img', { src: stillURL(best.path), alt: '', loading: 'lazy' }));
+  else coverBox.append(el('div', { class: 'none', text: asset.technical?.has_video === false
+    ? 'no stills — audio only' : 'no stills' }));
+
+  const stills = extras.length
+    ? el('div', { class: 'row-stills' }, extras.map(still => el('img', {
+        src: stillURL(still.path), alt: '', loading: 'lazy',
+        title: `${still.at_s}s — ${still.reason || 'no reason recorded'}`,
+        onclick: event => {
+          event.stopPropagation();
+          openAsset(asset.id, asset.stills.indexOf(still));
+        },
+      })))
+    : el('div', { class: 'row-stills' }, el('span', { class: 'note', text:
+        (asset.stills || []).length ? 'one still' : '' }));
+
+  const source = asset.captured?.at_source;
+  const approximate = source === 'file_mtime' || source === 'filename';
+  const gps = asset.captured?.gps;
+
+  return el('article', {
+    class: 'row', 'data-selected': String(state.selected === asset.id),
+    onclick: () => openAsset(asset.id, bestIndex),
+  },
+    coverBox,
+    stills,
+    el('div', { class: 'row-meta' },
+      el('div', { class: 'name', text: fileName(asset.source?.path) }),
+      el('div', { class: 'when' },
+        el('span', { class: approximate ? 'approx' : '', text: when(asset.captured?.at) }),
+        el('span', { text: '·' }),
+        el('span', { text: duration(asset.technical?.duration_s) }),
+        el('span', { text: '·' }),
+        el('span', { text: container(asset) }),
+        el('span', { text: '·' }),
+        el('span', { text: `${(asset.stills || []).length} still${(asset.stills || []).length === 1 ? '' : 's'}` }),
+        asset.technical?.has_video && !playable(asset)
+          ? el('span', { class: 'pill', text: 'player?',
+                         title: 'a browser cannot decode this format; use the copied path' })
+          : null,
+        gps ? el('span', { class: 'pill', text: `${gps.lat.toFixed(3)}, ${gps.lon.toFixed(3)}` }) : null),
+      el('div', { class: 'tags' }, (asset.labels || [])
+        .slice().sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8)
+        .map(l => el('span', { class: `tag${l.weak ? ' weak' : ''}`, text: l.text }))),
+      el('div', { class: 'path mono', text: mediaPath(asset) || '' })));
 }
 
 function renderCard(asset) {
@@ -546,8 +656,10 @@ function renderCard(asset) {
     .map(l => el('span', { class: `tag${l.weak ? ' weak' : ''}`, text: l.text }));
 
   // The stills beyond the cover, capped so a video with twenty stills cannot
-  // stretch the card; the remainder is counted rather than shown.
-  const extras = (asset.stills || []).slice(1, 5);
+  // stretch the card; the remainder is counted rather than shown. Filtered by
+  // identity, not by position: the cover is marked in the index and may be any
+  // entry, so slicing from the front would drop a real still and repeat the cover.
+  const extras = (asset.stills || []).filter(still => still !== best).slice(0, 4);
   const remaining = (asset.stills || []).length - 1 - extras.length;
   const strip = extras.length
     ? el('div', { class: 'strip' },
@@ -731,7 +843,8 @@ function renderDrawer() {
     body.append(el('h3', { text: 'Stills' }));
     body.append(el('dl', {}, stills.map((still, index) => [
       el('dt', { text: `${index + 1}. ${still.at_s}s` }),
-      el('dd', { text: `${still.reason || 'no reason recorded'}${still.faces ? ` · ${still.faces} face${still.faces > 1 ? 's' : ''}` : ''}` }),
+      el('dd', { text: `${still.cover ? 'cover — ' : ''}${still.reason || 'no reason recorded'}`
+                       + `${still.faces ? ` · ${still.faces} face${still.faces > 1 ? 's' : ''}` : ''}` }),
     ]).flat()));
   }
 
@@ -889,6 +1002,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('rail-toggle').addEventListener('click', () => {
     document.getElementById('rail').classList.toggle('hidden');
   });
+  document.getElementById('layout-toggle').addEventListener('click', () => {
+    state.layout = state.layout === 'grid' ? 'list' : 'grid';
+    document.getElementById('layout-toggle').textContent =
+      state.layout === 'grid' ? 'List view' : 'Grid view';
+    render();
+  });
   document.getElementById('backdrop').addEventListener('click', closeDrawer);
 
   document.addEventListener('keydown', event => {
@@ -931,6 +1050,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     <option value="name">File name</option>
   </select>
   <button id="rail-toggle" title="Show or hide the filters">Filters</button>
+  <button id="layout-toggle" title="Switch between the grid and a list with larger stills">List view</button>
   <span class="spacer"></span>
   <span id="progress"></span>
 </header>

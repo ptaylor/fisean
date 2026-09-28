@@ -52,7 +52,8 @@
       "score": 0.44,
       "faces": 1,
       "reason": "most central frame of shot 2",
-      "path": "stills/c1d9e0f3-webclip/01.jpg"
+      "path": "stills/c1d9e0f3-webclip/01.jpg",
+      "cover": true
     }
   ],
   "source": {

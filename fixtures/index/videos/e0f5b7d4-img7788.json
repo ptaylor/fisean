@@ -81,21 +81,24 @@
       "score": 0.86,
       "faces": 3,
       "reason": "most central frame of shot 1",
-      "path": "stills/e0f5b7d4-img7788/01.jpg"
+      "path": "stills/e0f5b7d4-img7788/01.jpg",
+      "cover": true
     },
     {
       "at_s": 51.2,
       "score": 0.83,
       "faces": 0,
       "reason": "sharpest frame of shot 9",
-      "path": "stills/e0f5b7d4-img7788/02.jpg"
+      "path": "stills/e0f5b7d4-img7788/02.jpg",
+      "cover": false
     },
     {
       "at_s": 80.4,
       "score": 0.75,
       "faces": 5,
       "reason": "scene change, sharpest frame of shot 13",
-      "path": "stills/e0f5b7d4-img7788/03.jpg"
+      "path": "stills/e0f5b7d4-img7788/03.jpg",
+      "cover": false
     }
   ],
   "source": {

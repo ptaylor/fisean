@@ -70,14 +70,16 @@
       "score": 0.7,
       "faces": 3,
       "reason": "most central frame of shot 1",
-      "path": "stills/7c2d5f10-mvi1234/01.jpg"
+      "path": "stills/7c2d5f10-mvi1234/01.jpg",
+      "cover": true
     },
     {
       "at_s": 74.5,
       "score": 0.66,
       "faces": 1,
       "reason": "sharpest frame of shot 3",
-      "path": "stills/7c2d5f10-mvi1234/02.jpg"
+      "path": "stills/7c2d5f10-mvi1234/02.jpg",
+      "cover": false
     }
   ],
   "source": {

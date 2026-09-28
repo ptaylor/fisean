@@ -68,14 +68,16 @@
       "score": 0.62,
       "faces": 5,
       "reason": "most central frame of shot 2",
-      "path": "stills/b8f4a1c2-vid00123/01.jpg"
+      "path": "stills/b8f4a1c2-vid00123/01.jpg",
+      "cover": true
     },
     {
       "at_s": 21.0,
       "score": 0.58,
       "faces": 2,
       "reason": "sharpest frame of shot 4",
-      "path": "stills/b8f4a1c2-vid00123/02.jpg"
+      "path": "stills/b8f4a1c2-vid00123/02.jpg",
+      "cover": false
     }
   ],
   "source": {

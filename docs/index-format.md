@@ -135,7 +135,11 @@ is re-encoded, which is worse.
 
   "stills": [
     { "path": "stills/3f9a1c07-dsc01234/01.jpg", "at_s": 3.2,
-      "score": 0.88, "faces": 2, "reason": "sharpest frame of shot 1" }
+      "score": 0.88, "faces": 2, "cover": true,
+      "reason": "sharpest frame of shot 1" },
+    { "path": "stills/3f9a1c07-dsc01234/02.jpg", "at_s": 18.7,
+      "score": 0.74, "faces": 0, "cover": false,
+      "reason": "scene change, most central frame of shot 7" }
   ]
 }
 ```
@@ -173,6 +177,17 @@ numbers, per rule 5.
 ## 5. Stills
 
 - One directory per asset under `stills/<id>/`, files numbered `01.jpg` upwards.
+- **`stills` is a timeline**: entries are in ascending `at_s`, so the filmstrip
+  reads as the video plays. It is *not* ordered by preference.
+- **Which still represents the video is stated, not implied.** Exactly one still
+  may carry `"cover": true`. The indexer sets it on the frame it judges best —
+  sharpest and most representative within its shot, scored across the sampled
+  frames — and that is the one shown in the list. A hand-picked cover, which the
+  user will want eventually, is the same flag set from `overrides.yaml`.
+- A browser reading an index with no marked cover falls back to the highest
+  `score`, and only then to the first entry. Position is the last resort, never
+  the rule: with a timeline ordering, "first" means "opening shot", which is not
+  a claim the indexer made.
 - Chosen by scene-change detection and then by score within a shot — never by
   keyframe flags, which are meaningless on the all-intra formats (DV, Motion
   JPEG) where every frame is a keyframe.

@@ -64,13 +64,13 @@ fixtures/media/2018/img9981.mov
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v libx264 -pix_fmt yuv420p -movflags +faststart fixtures/media/2018/img9981.mov
 
 fixtures/index/stills/2a7c4b96-img9981/01.jpg
-    magick -size 480x270 'gradient:#1b2036-#07080f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 5' -quality 72 fixtures/index/stills/2a7c4b96-img9981/01.jpg
+    magick -size 480x270 'gradient:#141726-#05060b' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 2' -quality 72 fixtures/index/stills/2a7c4b96-img9981/01.jpg
 
 fixtures/index/stills/2a7c4b96-img9981/02.jpg
-    magick -size 480x270 'gradient:#3a2c52-#0b0812' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 8' -quality 72 fixtures/index/stills/2a7c4b96-img9981/02.jpg
+    magick -size 480x270 'gradient:#1b2036-#07080f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 5' -quality 72 fixtures/index/stills/2a7c4b96-img9981/02.jpg
 
 fixtures/index/stills/2a7c4b96-img9981/03.jpg
-    magick -size 480x270 'gradient:#141726-#05060b' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 2' -quality 72 fixtures/index/stills/2a7c4b96-img9981/03.jpg
+    magick -size 480x270 'gradient:#3a2c52-#0b0812' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 8' -quality 72 fixtures/index/stills/2a7c4b96-img9981/03.jpg
 
 fixtures/media/2009/audio001.mp3
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i sine=frequency=440:duration=3 -c:a libmp3lame -b:a 64k fixtures/media/2009/audio001.mp3
