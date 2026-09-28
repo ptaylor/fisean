@@ -1,0 +1,74 @@
+{
+  "asset_version": 1,
+  "id": "6c8a3f29-img5512",
+  "technical": {
+    "container": "mov",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 1920,
+    "height": 1080,
+    "fps": 29.97,
+    "duration_s": 12.6,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2019-05-05T14:22:10Z",
+    "at_source": "container_metadata",
+    "device": {
+      "make": "Apple",
+      "model": "iPhone 8"
+    },
+    "gps": null
+  },
+  "analysis": {
+    "sampled_frames": 8,
+    "shot_count": 1,
+    "mean_luma": 0.39,
+    "sharpness_p10": 0.35,
+    "black_ratio": 0.0,
+    "freeze_ratio": 0.72
+  },
+  "labels": [
+    {
+      "text": "in a museum or gallery",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.66,
+      "frames": 6,
+      "weak": false
+    },
+    {
+      "text": "indoors",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.81,
+      "frames": 7,
+      "weak": false
+    }
+  ],
+  "summary": null,
+  "stills": [
+    {
+      "at_s": 6.3,
+      "score": 0.64,
+      "faces": 0,
+      "reason": "sharpest frame of the single shot",
+      "path": "stills/6c8a3f29-img5512/01.jpg"
+    },
+    {
+      "at_s": 10.9,
+      "score": 0.6,
+      "faces": 0,
+      "reason": "second-highest score, same shot",
+      "path": "stills/6c8a3f29-img5512/02.jpg"
+    }
+  ],
+  "source": {
+    "path": "2019/img5512.mov",
+    "size_bytes": 43499,
+    "mtime": "2019-05-05T14:22:10Z",
+    "sha256": null
+  }
+}

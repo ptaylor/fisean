@@ -1,0 +1,104 @@
+{
+  "asset_version": 1,
+  "id": "3f9a1c07-dsc01234",
+  "technical": {
+    "container": "avi",
+    "video_codec": "mpeg4",
+    "audio_codec": "mp3",
+    "width": 640,
+    "height": 480,
+    "fps": 25.0,
+    "duration_s": 42.3,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2011-08-02T14:03:11Z",
+    "at_source": "file_mtime",
+    "device": {
+      "make": "Sony",
+      "model": "HDR-CX115"
+    },
+    "gps": null
+  },
+  "analysis": {
+    "sampled_frames": 20,
+    "shot_count": 12,
+    "mean_luma": 0.42,
+    "sharpness_p10": 0.18,
+    "black_ratio": 0.01,
+    "freeze_ratio": 0.04
+  },
+  "labels": [
+    {
+      "text": "outdoors",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.91,
+      "frames": 9,
+      "weak": false
+    },
+    {
+      "text": "garden",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.63,
+      "frames": 5,
+      "weak": false
+    },
+    {
+      "text": "bicycle",
+      "group": "what",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.77,
+      "frames": 4,
+      "count": 3,
+      "weak": false
+    },
+    {
+      "text": "children playing",
+      "group": "activity",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.34,
+      "frames": 3,
+      "weak": true
+    }
+  ],
+  "summary": {
+    "text": "Two children playing in a garden; a bicycle is propped against the fence.",
+    "source": "caption",
+    "model": "siglip2-so400m-384"
+  },
+  "stills": [
+    {
+      "at_s": 3.2,
+      "score": 0.88,
+      "faces": 2,
+      "reason": "sharpest frame of shot 1",
+      "path": "stills/3f9a1c07-dsc01234/01.jpg"
+    },
+    {
+      "at_s": 18.7,
+      "score": 0.74,
+      "faces": 0,
+      "reason": "scene change, most central frame of shot 7",
+      "path": "stills/3f9a1c07-dsc01234/02.jpg"
+    },
+    {
+      "at_s": 33.1,
+      "score": 0.61,
+      "faces": 2,
+      "reason": "scene change, sharpest frame of shot 11",
+      "path": "stills/3f9a1c07-dsc01234/03.jpg"
+    }
+  ],
+  "source": {
+    "path": "2011/dsc01234.avi",
+    "size_bytes": 107320,
+    "mtime": "2011-08-02T14:03:11Z",
+    "sha256": null
+  }
+}

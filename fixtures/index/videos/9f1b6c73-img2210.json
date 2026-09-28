@@ -1,0 +1,106 @@
+{
+  "asset_version": 1,
+  "id": "9f1b6c73-img2210",
+  "technical": {
+    "container": "mp4",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 3840,
+    "height": 2160,
+    "fps": 59.94,
+    "duration_s": 73.8,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2021-02-14T10:03:00Z",
+    "at_source": "container_metadata",
+    "device": {
+      "make": "Apple",
+      "model": "iPhone 11"
+    },
+    "gps": {
+      "lat": 46.0207,
+      "lon": 7.7491
+    }
+  },
+  "analysis": {
+    "sampled_frames": 37,
+    "shot_count": 9,
+    "mean_luma": 0.71,
+    "sharpness_p10": 0.41,
+    "black_ratio": 0.0,
+    "freeze_ratio": 0.03
+  },
+  "labels": [
+    {
+      "text": "mountains",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.9,
+      "frames": 25,
+      "weak": false
+    },
+    {
+      "text": "snow",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.87,
+      "frames": 22,
+      "weak": false
+    },
+    {
+      "text": "a sledge or snowman",
+      "group": "what",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.44,
+      "frames": 6,
+      "weak": false
+    },
+    {
+      "text": "children",
+      "group": "who",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.35,
+      "frames": 8,
+      "weak": true
+    }
+  ],
+  "summary": {
+    "text": "Children sledging in deep snow below the mountains.",
+    "source": "caption",
+    "model": "siglip2-so400m-384"
+  },
+  "stills": [
+    {
+      "at_s": 8.1,
+      "score": 0.96,
+      "faces": 0,
+      "reason": "sharpest frame of shot 1",
+      "path": "stills/9f1b6c73-img2210/01.jpg"
+    },
+    {
+      "at_s": 44.6,
+      "score": 0.85,
+      "faces": 2,
+      "reason": "scene change, sharpest frame of shot 6",
+      "path": "stills/9f1b6c73-img2210/02.jpg"
+    },
+    {
+      "at_s": 68.0,
+      "score": 0.8,
+      "faces": 3,
+      "reason": "scene change, most central frame of shot 9",
+      "path": "stills/9f1b6c73-img2210/03.jpg"
+    }
+  ],
+  "source": {
+    "path": "2021/img2210.mp4",
+    "size_bytes": 43552,
+    "mtime": "2021-02-14T10:03:00Z",
+    "sha256": null
+  }
+}

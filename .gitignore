@@ -7,6 +7,17 @@
 *.swp
 *~
 
-# Nothing else yet — the technology stack is not chosen. Add the standard
+# Python (the tool and its fixture generator are standard-library Python)
+__pycache__/
+*.py[cod]
+
+# The fixture media is *generated* test patterns, not source: 8 MB of DV and
+# MPEG-1 stand-ins whose only job is to exercise the playback and copy-path
+# paths. Run `python3 fixtures/make_fixtures.py` to rebuild it locally. The
+# fixture *index* — and its stills — are committed, so the browser works from a
+# fresh clone without ffmpeg or ImageMagick installed.
+fixtures/media/
+
+# Nothing else yet — the indexer's stack is still being chosen. Add the standard
 # patterns for each language, package manager and build tool here in the same
 # change that introduces it. See AGENTS.md, "Keeping .gitignore current".

@@ -1,0 +1,107 @@
+{
+  "asset_version": 1,
+  "id": "a41b2e88-img0042",
+  "technical": {
+    "container": "mov",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 1920,
+    "height": 1080,
+    "fps": 29.97,
+    "duration_s": 61.5,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2016-07-24T17:12:40Z",
+    "at_source": "container_metadata",
+    "device": {
+      "make": "Apple",
+      "model": "iPhone 6"
+    },
+    "gps": {
+      "lat": 50.2617,
+      "lon": -4.7956
+    }
+  },
+  "analysis": {
+    "sampled_frames": 31,
+    "shot_count": 6,
+    "mean_luma": 0.58,
+    "sharpness_p10": 0.33,
+    "black_ratio": 0.0,
+    "freeze_ratio": 0.02
+  },
+  "labels": [
+    {
+      "text": "beach",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.88,
+      "frames": 12,
+      "weak": false
+    },
+    {
+      "text": "outdoors",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.94,
+      "frames": 18,
+      "weak": false
+    },
+    {
+      "text": "people",
+      "group": "who",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.82,
+      "frames": 14,
+      "count": 4,
+      "weak": false
+    },
+    {
+      "text": "paddling at the water's edge",
+      "group": "activity",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.47,
+      "frames": 5,
+      "weak": true
+    }
+  ],
+  "summary": {
+    "text": "Family on a Cornish beach, paddling at the water's edge.",
+    "source": "caption",
+    "model": "siglip2-so400m-384"
+  },
+  "stills": [
+    {
+      "at_s": 2.4,
+      "score": 0.93,
+      "faces": 4,
+      "reason": "most central frame of shot 1",
+      "path": "stills/a41b2e88-img0042/01.jpg"
+    },
+    {
+      "at_s": 27.0,
+      "score": 0.81,
+      "faces": 2,
+      "reason": "sharpest frame of shot 3",
+      "path": "stills/a41b2e88-img0042/02.jpg"
+    },
+    {
+      "at_s": 55.8,
+      "score": 0.79,
+      "faces": 3,
+      "reason": "scene change, sharpest frame of shot 6",
+      "path": "stills/a41b2e88-img0042/03.jpg"
+    }
+  ],
+  "source": {
+    "path": "2016/img0042.mov",
+    "size_bytes": 43499,
+    "mtime": "2016-07-24T17:12:40Z",
+    "sha256": null
+  }
+}

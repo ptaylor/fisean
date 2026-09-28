@@ -1,0 +1,37 @@
+{
+  "asset_version": 1,
+  "id": "5d3e8a41-audio001",
+  "technical": {
+    "container": "mp3",
+    "video_codec": null,
+    "audio_codec": "mp3",
+    "width": null,
+    "height": null,
+    "fps": null,
+    "duration_s": 187.4,
+    "has_video": false
+  },
+  "captured": {
+    "at": "2009-06-14T09:20:44Z",
+    "at_source": "file_mtime",
+    "device": null,
+    "gps": null
+  },
+  "analysis": {
+    "sampled_frames": 0,
+    "shot_count": null,
+    "mean_luma": null,
+    "sharpness_p10": null,
+    "black_ratio": null,
+    "freeze_ratio": null
+  },
+  "labels": [],
+  "summary": null,
+  "stills": [],
+  "source": {
+    "path": "2009/audio001.mp3",
+    "size_bytes": 24494,
+    "mtime": "2009-06-14T09:20:44Z",
+    "sha256": null
+  }
+}

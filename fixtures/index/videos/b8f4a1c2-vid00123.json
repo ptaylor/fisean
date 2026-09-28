@@ -1,0 +1,87 @@
+{
+  "asset_version": 1,
+  "id": "b8f4a1c2-vid00123",
+  "technical": {
+    "container": "3gp",
+    "video_codec": "h263",
+    "audio_codec": "amr_nb",
+    "width": 176,
+    "height": 144,
+    "fps": 12.0,
+    "duration_s": 28.7,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2007-11-03T11:05:00Z",
+    "at_source": "filename",
+    "device": {
+      "make": "Nokia",
+      "model": "N95"
+    },
+    "gps": {
+      "lat": 53.4808,
+      "lon": -2.2426
+    }
+  },
+  "analysis": {
+    "sampled_frames": 14,
+    "shot_count": 5,
+    "mean_luma": 0.49,
+    "sharpness_p10": 0.1,
+    "black_ratio": 0.02,
+    "freeze_ratio": 0.07
+  },
+  "labels": [
+    {
+      "text": "street or town",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.58,
+      "frames": 6,
+      "weak": false
+    },
+    {
+      "text": "crowd",
+      "group": "who",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.44,
+      "frames": 4,
+      "weak": false
+    },
+    {
+      "text": "people",
+      "group": "who",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.66,
+      "frames": 8,
+      "count": 11,
+      "weak": false
+    }
+  ],
+  "summary": null,
+  "stills": [
+    {
+      "at_s": 5.5,
+      "score": 0.62,
+      "faces": 5,
+      "reason": "most central frame of shot 2",
+      "path": "stills/b8f4a1c2-vid00123/01.jpg"
+    },
+    {
+      "at_s": 21.0,
+      "score": 0.58,
+      "faces": 2,
+      "reason": "sharpest frame of shot 4",
+      "path": "stills/b8f4a1c2-vid00123/02.jpg"
+    }
+  ],
+  "source": {
+    "path": "2007/vid00123.3gp",
+    "size_bytes": 102623,
+    "mtime": "2007-11-03T11:05:00Z",
+    "sha256": null
+  }
+}

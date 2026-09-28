@@ -1,0 +1,72 @@
+{
+  "asset_version": 1,
+  "id": "0e6b3d55-clip0007",
+  "technical": {
+    "container": "dv",
+    "video_codec": "dvvideo",
+    "audio_codec": "pcm_s16le",
+    "width": 720,
+    "height": 576,
+    "fps": 25.0,
+    "duration_s": 212.0,
+    "has_video": true
+  },
+  "captured": {
+    "at": null,
+    "at_source": "unknown",
+    "device": null,
+    "gps": null
+  },
+  "analysis": {
+    "sampled_frames": 42,
+    "shot_count": 1,
+    "mean_luma": 0.47,
+    "sharpness_p10": 0.29,
+    "black_ratio": 0.24,
+    "freeze_ratio": 0.61
+  },
+  "labels": [
+    {
+      "text": "countryside",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.52,
+      "frames": 11,
+      "weak": false
+    },
+    {
+      "text": "people",
+      "group": "who",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.61,
+      "frames": 6,
+      "count": 2,
+      "weak": false
+    }
+  ],
+  "summary": null,
+  "stills": [
+    {
+      "at_s": 88.0,
+      "score": 0.52,
+      "faces": 1,
+      "reason": "sharpest frame of the single shot",
+      "path": "stills/0e6b3d55-clip0007/01.jpg"
+    },
+    {
+      "at_s": 190.2,
+      "score": 0.48,
+      "faces": 0,
+      "reason": "second-highest score, same shot",
+      "path": "stills/0e6b3d55-clip0007/02.jpg"
+    }
+  ],
+  "source": {
+    "path": "unknown/clip0007.dv",
+    "size_bytes": 1440000,
+    "mtime": null,
+    "sha256": null
+  }
+}

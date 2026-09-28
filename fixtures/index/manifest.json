@@ -1,0 +1,39 @@
+{
+  "index_version": 1,
+  "generated": "2026-09-28T20:00:00Z",
+  "media_root": "../media",
+  "asset_count": 12,
+  "generator": {
+    "name": "fixtures/make_fixtures.py",
+    "version": "1"
+  },
+  "models": [
+    {
+      "name": "ffmpeg",
+      "version": "8.1.2",
+      "licence": "GPL-3.0-or-later"
+    },
+    {
+      "name": "yolo26n",
+      "version": "8.4.164",
+      "licence": "AGPL-3.0"
+    },
+    {
+      "name": "siglip2-so400m-384",
+      "version": "webli",
+      "licence": "Apache-2.0"
+    }
+  ],
+  "vocabulary": {
+    "name": "vocabulary.yaml",
+    "sha256": "5f07fd24ae95285a3d0aca246d66b3070c4dfc631fb5a4684478c7ce6b3334b1"
+  },
+  "errors": [
+    {
+      "path": "2004/broken/corrupt.avi",
+      "stage": "probe",
+      "message": "Invalid data found when processing input"
+    }
+  ],
+  "note": "Synthetic fixture index. The media it points at is FFmpeg test patterns, not footage. Regenerate with fixtures/make_fixtures.py."
+}

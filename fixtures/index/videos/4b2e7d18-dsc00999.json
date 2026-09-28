@@ -1,0 +1,68 @@
+{
+  "asset_version": 1,
+  "id": "4b2e7d18-dsc00999",
+  "technical": {
+    "container": "avi",
+    "video_codec": "mpeg4",
+    "audio_codec": null,
+    "width": 1280,
+    "height": 720,
+    "fps": 30.0,
+    "duration_s": 19.4,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2013-09-21T19:48:30Z",
+    "at_source": "file_mtime",
+    "device": {
+      "make": "Samsung",
+      "model": "WB150"
+    },
+    "gps": null
+  },
+  "analysis": {
+    "sampled_frames": 10,
+    "shot_count": 4,
+    "mean_luma": 0.21,
+    "sharpness_p10": 0.13,
+    "black_ratio": 0.06,
+    "freeze_ratio": 0.02
+  },
+  "labels": [
+    {
+      "text": "city skyline",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.68,
+      "frames": 5,
+      "weak": false
+    },
+    {
+      "text": "a car",
+      "group": "what",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.71,
+      "frames": 3,
+      "count": 6,
+      "weak": false
+    }
+  ],
+  "summary": null,
+  "stills": [
+    {
+      "at_s": 4.0,
+      "score": 0.58,
+      "faces": 0,
+      "reason": "most central frame of shot 2",
+      "path": "stills/4b2e7d18-dsc00999/01.jpg"
+    }
+  ],
+  "source": {
+    "path": "2013/dsc00999.avi",
+    "size_bytes": 107320,
+    "mtime": "2013-09-21T19:48:30Z",
+    "sha256": null
+  }
+}

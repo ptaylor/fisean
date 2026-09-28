@@ -1,0 +1,107 @@
+{
+  "asset_version": 1,
+  "id": "e0f5b7d4-img7788",
+  "technical": {
+    "container": "mp4",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 1920,
+    "height": 1080,
+    "fps": 29.97,
+    "duration_s": 88.2,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2022-08-19T13:10:00Z",
+    "at_source": "container_metadata",
+    "device": {
+      "make": "Apple",
+      "model": "iPhone 11"
+    },
+    "gps": {
+      "lat": 51.5316,
+      "lon": -0.1543
+    }
+  },
+  "analysis": {
+    "sampled_frames": 44,
+    "shot_count": 14,
+    "mean_luma": 0.55,
+    "sharpness_p10": 0.27,
+    "black_ratio": 0.01,
+    "freeze_ratio": 0.06
+  },
+  "labels": [
+    {
+      "text": "at the zoo or farm",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.62,
+      "frames": 15,
+      "weak": false
+    },
+    {
+      "text": "horses or farm animals",
+      "group": "who",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.71,
+      "frames": 12,
+      "weak": false
+    },
+    {
+      "text": "a group of people",
+      "group": "who",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.53,
+      "frames": 9,
+      "weak": false
+    },
+    {
+      "text": "sheep",
+      "group": "who",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.64,
+      "frames": 4,
+      "count": 7,
+      "weak": false
+    }
+  ],
+  "summary": {
+    "text": "A day at the zoo: sheep in a paddock and a crowd at the fence.",
+    "source": "caption",
+    "model": "siglip2-so400m-384"
+  },
+  "stills": [
+    {
+      "at_s": 3.9,
+      "score": 0.86,
+      "faces": 3,
+      "reason": "most central frame of shot 1",
+      "path": "stills/e0f5b7d4-img7788/01.jpg"
+    },
+    {
+      "at_s": 51.2,
+      "score": 0.83,
+      "faces": 0,
+      "reason": "sharpest frame of shot 9",
+      "path": "stills/e0f5b7d4-img7788/02.jpg"
+    },
+    {
+      "at_s": 80.4,
+      "score": 0.75,
+      "faces": 5,
+      "reason": "scene change, sharpest frame of shot 13",
+      "path": "stills/e0f5b7d4-img7788/03.jpg"
+    }
+  ],
+  "source": {
+    "path": "2022/img7788.mp4",
+    "size_bytes": 43552,
+    "mtime": "2022-08-19T13:10:00Z",
+    "sha256": null
+  }
+}

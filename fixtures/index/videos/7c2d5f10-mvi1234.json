@@ -1,0 +1,89 @@
+{
+  "asset_version": 1,
+  "id": "7c2d5f10-mvi1234",
+  "technical": {
+    "container": "mpeg",
+    "video_codec": "mpeg1video",
+    "audio_codec": "mp2",
+    "width": 352,
+    "height": 288,
+    "fps": 25.0,
+    "duration_s": 96.4,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2003-12-25T15:41:02Z",
+    "at_source": "file_mtime",
+    "device": null,
+    "gps": null
+  },
+  "analysis": {
+    "sampled_frames": 24,
+    "shot_count": 3,
+    "mean_luma": 0.51,
+    "sharpness_p10": 0.12,
+    "black_ratio": 0.03,
+    "freeze_ratio": 0.11
+  },
+  "labels": [
+    {
+      "text": "indoors",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.86,
+      "frames": 20,
+      "weak": false
+    },
+    {
+      "text": "birthday cake",
+      "group": "what",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.41,
+      "frames": 6,
+      "weak": false
+    },
+    {
+      "text": "balloons",
+      "group": "what",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.55,
+      "frames": 8,
+      "weak": false
+    },
+    {
+      "text": "children",
+      "group": "who",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.38,
+      "frames": 9,
+      "weak": true
+    }
+  ],
+  "summary": null,
+  "stills": [
+    {
+      "at_s": 12.0,
+      "score": 0.7,
+      "faces": 3,
+      "reason": "most central frame of shot 1",
+      "path": "stills/7c2d5f10-mvi1234/01.jpg"
+    },
+    {
+      "at_s": 74.5,
+      "score": 0.66,
+      "faces": 1,
+      "reason": "sharpest frame of shot 3",
+      "path": "stills/7c2d5f10-mvi1234/02.jpg"
+    }
+  ],
+  "source": {
+    "path": "2003/mvi1234.mpeg",
+    "size_bytes": 194560,
+    "mtime": "2003-12-25T15:41:02Z",
+    "sha256": null
+  }
+}

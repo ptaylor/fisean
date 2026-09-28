@@ -1,0 +1,107 @@
+{
+  "asset_version": 1,
+  "id": "2a7c4b96-img9981",
+  "technical": {
+    "container": "mov",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 1920,
+    "height": 1080,
+    "fps": 29.97,
+    "duration_s": 45.9,
+    "has_video": true
+  },
+  "captured": {
+    "at": "2018-12-31T23:58:12Z",
+    "at_source": "container_metadata",
+    "device": {
+      "make": "Apple",
+      "model": "iPhone X"
+    },
+    "gps": {
+      "lat": 55.9533,
+      "lon": -3.1883
+    }
+  },
+  "analysis": {
+    "sampled_frames": 23,
+    "shot_count": 8,
+    "mean_luma": 0.12,
+    "sharpness_p10": 0.21,
+    "black_ratio": 0.31,
+    "freeze_ratio": 0.05
+  },
+  "labels": [
+    {
+      "text": "night or darkness",
+      "group": "setting",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.93,
+      "frames": 21,
+      "weak": false
+    },
+    {
+      "text": "fireworks",
+      "group": "what",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.61,
+      "frames": 9,
+      "weak": false
+    },
+    {
+      "text": "crowd",
+      "group": "who",
+      "source": "zero_shot",
+      "model": "siglip2-so400m-384",
+      "score": 0.57,
+      "frames": 7,
+      "weak": false
+    },
+    {
+      "text": "people",
+      "group": "who",
+      "source": "detector",
+      "model": "yolo26n",
+      "score": 0.58,
+      "frames": 12,
+      "count": 23,
+      "weak": false
+    }
+  ],
+  "summary": {
+    "text": "Hogmanay fireworks over a crowd in the dark.",
+    "source": "caption",
+    "model": "siglip2-so400m-384"
+  },
+  "stills": [
+    {
+      "at_s": 30.5,
+      "score": 0.9,
+      "faces": 0,
+      "reason": "sharpest frame of shot 5",
+      "path": "stills/2a7c4b96-img9981/01.jpg"
+    },
+    {
+      "at_s": 41.2,
+      "score": 0.72,
+      "faces": 0,
+      "reason": "scene change, most central frame of shot 8",
+      "path": "stills/2a7c4b96-img9981/02.jpg"
+    },
+    {
+      "at_s": 12.9,
+      "score": 0.55,
+      "faces": 3,
+      "reason": "most central frame of shot 2",
+      "path": "stills/2a7c4b96-img9981/03.jpg"
+    }
+  ],
+  "source": {
+    "path": "2018/img9981.mov",
+    "size_bytes": 43499,
+    "mtime": "2018-12-31T23:58:12Z",
+    "sha256": null
+  }
+}
