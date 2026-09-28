@@ -462,6 +462,48 @@ Every dependency added from here must be AGPL-compatible: BSD-3-Clause
 AGPL-incompatible component is a rejected option, and the reason belongs with it
 in the prior art survey under "Prior art".
 
+### Per-file notices — required
+
+Every hand-written source and asset file carries two lines near the top:
+
+```
+SPDX-License-Identifier: AGPL-3.0-or-later
+SPDX-FileCopyrightText: 2026 Paul Taylor
+```
+
+in that file's own comment syntax — `#` for Python, shell and YAML, `//` or
+`/* */` for the JavaScript and CSS, `<!-- -->` for the HTML and the SVG. In
+`app.js` it goes *above* `'use strict'`, which must stay the first statement.
+
+**In scope**: `browse.py`, `fisean.py`, `install.sh`,
+`fixtures/make_fixtures.py`, `vocabulary.yaml`, and the hand-written files in
+`static/` — `index.html`, `app.css`, `app.js`, `icon.svg`.
+
+**Out of scope**: prose (`README.md`, `AGENTS.md`, `docs/`), which is covered by
+`LICENSE` and by the README's own licence section; generated files
+(`fixtures/index/`, `static/favicon.ico`), which are regenerated anyway and whose
+provenance is recorded by the command that rebuilds them; and `LICENSE` itself,
+which *is* the licence.
+
+Two decisions recorded here so they are not silently revisited:
+
+- **SPDX identifiers, not the FSF's 14-line block.** The FSF's recommended notice
+  repeats the grant, the warranty disclaimer and the address of the licence in
+  every file. The licence already reaches every recipient through `LICENSE`, and
+  nine files of boilerplate would bury the code it is meant to protect. SPDX is
+  what licence scanners and REUSE read, and it states the `-or-later` choice
+  precisely, which prose does not always do.
+- **Two lines, and nothing else.** The header is a statement of licence, not a
+  place for notes about changes; a dated "Correction" note in prose is where a
+  revision gets explained. Hand-editing a header is the only reason it should
+  ever move.
+
+Do not edit `LICENSE` — it is the verbatim FSF text, and paraphrasing it would
+misstate the licence. Do not strip a header, and do not add terms on top of the
+AGPL that restrict anyone's rights under it (AGPL §10). Dual licensing as the
+copyright holder is a separate decision, and is only open for code held
+outright.
+
 ## Level of existing art
 
 Neighbouring repositories under `/Users/paul/github/pftylr/` show the preferred

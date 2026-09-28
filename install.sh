@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Paul Taylor
 # Install the fisean command.
 #
 #   ./install.sh                       # into ~/bin

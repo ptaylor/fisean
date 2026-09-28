@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Paul Taylor
 """fisean — one entry point for the fisean tools.
 
     fisean open <DIR>      serve the index in DIR and open it in a browser

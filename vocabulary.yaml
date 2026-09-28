@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Paul Taylor
+#
 # vocabulary.yaml — the labels the indexer asks for.
 #
 # This file is project source, and it is data rather than code on purpose: the

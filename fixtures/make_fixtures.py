@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Paul Taylor
 """Generate the fixture index and the synthetic media it points at.
 
 The browser half is developed against this before any real library exists, so

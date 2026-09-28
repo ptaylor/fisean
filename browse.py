@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Paul Taylor
 """fisean browse — the browser half of fisean.
 
 Reads an index produced by the indexer and presents it as a library of stills.
