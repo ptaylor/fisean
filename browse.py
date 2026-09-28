@@ -158,6 +158,17 @@ main { display: flex; align-items: flex-start; }
   background: rgba(8, 10, 12, 0.72); border-radius: 6px;
   padding: 2px 6px; font-size: 11.5px; color: var(--ink);
 }
+/* The video's other stills, so the list shows what was extracted without
+   opening each one. The cover is already above, so the strip holds the rest
+   rather than repeating it — and clicking one opens the drawer on that still. */
+.strip { display: flex; gap: 4px; padding: 9px 11px 0; align-items: center; }
+.strip img {
+  width: 48px; height: 32px; object-fit: cover; border-radius: 4px;
+  opacity: 0.55; border: 1px solid transparent; cursor: pointer;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+.strip img:hover { opacity: 1; border-color: var(--dimmer); }
+.strip .more { font-size: 11.5px; color: var(--dimmer); }
 .pill {
   background: rgba(8, 10, 12, 0.72); border-radius: 6px;
   padding: 2px 6px; font-size: 11.5px; color: var(--ink);
@@ -534,12 +545,30 @@ function renderCard(asset) {
     .slice(0, 3)
     .map(l => el('span', { class: `tag${l.weak ? ' weak' : ''}`, text: l.text }));
 
+  // The stills beyond the cover, capped so a video with twenty stills cannot
+  // stretch the card; the remainder is counted rather than shown.
+  const extras = (asset.stills || []).slice(1, 5);
+  const remaining = (asset.stills || []).length - 1 - extras.length;
+  const strip = extras.length
+    ? el('div', { class: 'strip' },
+        extras.map(still => el('img', {
+          src: stillURL(still.path), alt: '', loading: 'lazy',
+          title: `${still.at_s}s — ${still.reason || 'no reason recorded'}`,
+          onclick: event => {
+            event.stopPropagation();
+            openAsset(asset.id, asset.stills.indexOf(still));
+          },
+        })),
+        remaining > 0 ? el('span', { class: 'more', text: `+${remaining}` }) : null)
+    : null;
+
   return el('article', {
     class: 'card', 'data-selected': String(state.selected === asset.id),
     onclick: () => openAsset(asset.id),
   },
     thumb,
     el('div', { class: 'body' },
+      strip,
       el('div', { class: 'when' },
         el('span', { class: source === 'file_mtime' || source === 'filename' ? 'approx' : '',
                      text: when(asset.captured?.at) }),
@@ -554,9 +583,9 @@ function renderCard(asset) {
 
 /* ----------------------------------------------------------------- drawer */
 
-function openAsset(id) {
+function openAsset(id, index = 0) {
   state.selected = id;
-  state.still = 0;
+  state.still = index;
   state.playing = false;
   renderDrawer();
   document.getElementById('drawer').hidden = false;
