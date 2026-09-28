@@ -106,6 +106,31 @@ No test suite yet. Once there is one, every change runs it in full, and the
 commands that gate a commit (formatting, linting, type checking, tests) belong in
 this section. Prefer checks that can be run non-interactively from a terminal.
 
+## Licence — AGPL-3.0-or-later
+
+This repo was MIT until 2026-09-28 and is now **AGPL-3.0-or-later** (see
+[LICENSE](LICENSE)). The decoder forced the change; the preference did not
+decide it:
+
+- **FFmpeg is GPL here.** The build at `/usr/local/bin/ffmpeg` is 8.1.2,
+  configured `--enable-gpl --enable-version3`, so it is GPL-3.0-or-later.
+  Shelling out to the `ffmpeg` / `ffprobe` **CLI** keeps it at arm's length, but
+  linking `libav*` — through PyAV or any other binding — makes this program
+  GPL-3.0-or-later as well. MIT could not survive that, and "never link the
+  libraries" is a heavier rule to live under than the licence is.
+- **AGPL keeps the prior art reachable.** Immich and PhotoPrism are both AGPL and
+  are the closest existing answers to the browser half. GPL-3.0 cannot
+  incorporate AGPL code; AGPL-3.0 can. (GPL-3.0 §13 runs one way only: GPL code
+  may be combined into an AGPL work, not the reverse.) Choosing plain GPL-3.0
+  would have closed that door for nothing.
+- **The network clause costs nothing today.** The tool is offline and local, and
+  the user of such a tool is the copyright holder anyway.
+
+Every dependency added from here must be AGPL-compatible: BSD-3-Clause
+(PySceneDetect), MIT (TransNetV2, vcsi) and Apache-2.0 (OpenCV) all are. An
+AGPL-incompatible component is a rejected option, and the reason belongs with it
+in the prior art section below.
+
 ## Level of existing art
 
 Neighbouring repositories under `/Users/paul/github/pftylr/` show the preferred
@@ -113,6 +138,10 @@ house style: small, single-purpose tools, plain standard-library code where
 possible, minimal dependencies, an MIT `LICENSE`, and a `README.md` that is the
 user-facing contract. Read the README before changing behaviour and keep it in
 step with what you change.
+
+**This repo is the deliberate exception on licence** — AGPL-3.0-or-later, for the
+FFmpeg and prior-art reasons above, not by drift. Do not "correct" it back to MIT
+to match the neighbours.
 
 ## Commit conventions
 

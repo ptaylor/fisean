@@ -33,5 +33,5 @@ This README and [AGENTS.md](AGENTS.md) were written with GitHub Copilot
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+AGPL-3.0-or-later. See [LICENSE](LICENSE).
 
