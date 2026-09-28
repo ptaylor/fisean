@@ -3,10 +3,10 @@
 
 Reads an index produced by the indexer and presents it as a library of stills.
 Standard library only, and no build step: this file is the CLI and the HTTP
-server, and the interface it serves is three ordinary files in `static/` beside
-it — `index.html`, `app.css`, `app.js`. They are separate because they are 720
-lines of JavaScript and 260 of CSS, and inside a Python string an editor, a
-linter and `node --check` are all blind to them.
+server, and the interface it serves is ordinary files in `static/` beside it —
+`index.html`, `app.css`, `app.js`, and the two icons. They are separate because
+they are 720 lines of JavaScript and 260 of CSS, and inside a Python string an
+editor, a linter and `node --check` are all blind to them.
 
     python3 browse.py                          # the committed fixture index
     python3 browse.py --index ~/Library/.../videos/mylibrary
@@ -18,7 +18,7 @@ read-only, so the browser's own decoder can play it. It never runs ffmpeg and
 never decodes anything itself.
 
     /              the interface (static/index.html)
-    /static/...    its stylesheet and script
+    /static/...    its stylesheet, script and icons
     /config.json   what the server knows and the index cannot state
     /index/...     the index directory, read-only (records and stills)
     /media/...     the resolved media root, read-only, with range requests
@@ -50,14 +50,18 @@ RUNS_ON = "127.0.0.1"
 # this file and still find static/ beside the real one.
 HERE = Path(__file__).resolve().parent
 STATIC_DIR = HERE / "static"
-STATIC_FILES = ("index.html", "app.css", "app.js")
+STATIC_FILES = ("index.html", "app.css", "app.js", "icon.svg", "favicon.ico")
 
-# Explicit rather than trusting the system's mime table for the three file types
-# the interface is made of; stills and media fall back to mimetypes.
+# Explicit rather than trusting the system's mime table for the file types the
+# interface is made of; stills and media fall back to mimetypes. The suffix list
+# doubles as what /static/ is allowed to serve, so an extension has to be here to
+# be reachable at all.
 STATIC_TYPES = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".ico": "image/vnd.microsoft.icon",
 }
 
 

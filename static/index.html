@@ -4,11 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>físeán</title>
+<!-- The .ico first as the fallback, then the SVG, which current browsers prefer.
+     The SVG is the icon; the .ico is for anything that cannot read one. -->
+<link rel="icon" href="/static/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 <header>
-  <h1>físe<span>án</span></h1>
+  <div class="brand">
+    <img class="mark" src="/static/icon.svg" width="22" height="22" alt="">
+    <h1>físe<span>án</span></h1>
+  </div>
   <span class="count" id="count"></span>
   <input type="search" id="q" placeholder="Search labels, summary, path…   /" aria-label="Search">
   <select id="sort" aria-label="Sort">

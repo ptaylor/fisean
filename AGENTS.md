@@ -14,8 +14,9 @@ in executable names and paths are a portability tax that buys nothing.
 ## Status
 
 The **browser half exists and runs**: `browse.py`, a standard-library Python
-server, and its interface as three ordinary files in [`static/`](static) that it
-serves from disk. It is developed against the synthetic fixture library in
+server, and its interface as ordinary files in [`static/`](static) — the page,
+the stylesheet, the script and the icon — that it serves from disk. It is
+developed against the synthetic fixture library in
 [`fixtures/`](fixtures/README.md), so every number on screen describes invented
 footage.
 
@@ -313,7 +314,7 @@ Rules:
 | --- | --- |
 | `fisean.py` | the `fisean` command: one entry point that dispatches to the halves, and implements neither |
 | `browse.py` | the browser half: CLI and HTTP server, nothing else |
-| `static/` | its interface — `index.html`, `app.css`, `app.js`, served from disk |
+| `static/` | its interface — `index.html`, `app.css`, `app.js`, `icon.svg`, `favicon.ico`, served from disk |
 | `install.sh` | symlinks `fisean` into `$BIN` (default `~/bin`) and checks that it runs |
 | `fixtures/` | the synthetic library the browser is developed against — see [fixtures/README.md](fixtures/README.md) |
 | `docs/index-format.md` | the index contract, version 1 |
@@ -346,6 +347,19 @@ honest when it is also a file boundary.
     at all. This replaced an earlier one-file design whose JavaScript and CSS were
     Python string constants: 78% of a 1,300-line file that no editor, linter or
     checker could see inside.
+  - **The icon is one drawing in two files.** `static/icon.svg` is the icon —
+    served to the page, shown in the header, used by the README and offered to
+    the browser as a favicon. `static/favicon.ico` is the same mark rasterised to
+    16/32/48px for browsers that will not read an SVG favicon, and it is
+    generated: regenerate it with the command under Development Commands rather
+    than editing it. Keep the SVG flat — solid fills, no gradients, no dashed
+    strokes, no filters — because that is both what survives being scaled to
+    16px and what ImageMagick's own SVG renderer can reproduce, which is what
+    lets the `.ico` be built by a command instead of by a browser. Two traps, both
+    measured: ImageMagick needs `-background none` *before* the input filename or
+    it silently fills the transparent corners opaque white, and a rounded shape
+    drawn as a path with arcs has to get its sweep flag right or its round ends
+    curve inward and pinch into a bow tie.
   - Build DOM with `createElement` and `textContent`. Never `innerHTML` with
     anything that came from the index: a label or summary is data, and treating it
     as markup would make the index an injection vector.
@@ -375,6 +389,13 @@ fisean browse DIR --port 9000 --no-open
 
 python3 fisean.py browse fixtures/index   # the same thing without installing
 python3 browse.py --index fixtures/index  # the browser half on its own
+
+# Rebuild the favicon from the icon after editing static/icon.svg. `-background
+# none` must come before the input or the transparent corners come out white.
+magick -background none static/icon.svg -resize 16x16 /tmp/i16.png
+magick -background none static/icon.svg -resize 32x32 /tmp/i32.png
+magick -background none static/icon.svg -resize 48x48 /tmp/i48.png
+magick /tmp/i16.png /tmp/i32.png /tmp/i48.png static/favicon.ico
 ```
 
 `DIR` may be the index directory itself (the one holding `manifest.json`) or a

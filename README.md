@@ -1,3 +1,5 @@
+<img src="static/icon.svg" width="76" height="76" alt="">
+
 # físeán
 
 Analyse and classify the contents of video files, and extract the stills that
@@ -70,7 +72,8 @@ technology, and the required form of AI attribution.
 
 ## AI contributions
 
-This README and [AGENTS.md](AGENTS.md) were written with GitHub Copilot
+This README, [AGENTS.md](AGENTS.md) and the icon (`static/icon.svg`, and the
+`static/favicon.ico` generated from it) were written with GitHub Copilot
 (DeepSeek V4 Flash).
 
 ## License
