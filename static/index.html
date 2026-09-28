@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>físeán</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header>
+  <h1>físe<span>án</span></h1>
+  <span class="count" id="count"></span>
+  <input type="search" id="q" placeholder="Search labels, summary, path…   /" aria-label="Search">
+  <select id="sort" aria-label="Sort">
+    <option value="date-desc">Newest first</option>
+    <option value="date-asc">Oldest first</option>
+    <option value="duration">Longest</option>
+    <option value="sharpest">Sharpest</option>
+    <option value="stills">Most stills</option>
+    <option value="name">File name</option>
+  </select>
+  <button id="rail-toggle" title="Show or hide the filters">Filters</button>
+  <button id="layout-toggle" title="Switch between the grid and a list with larger stills">List view</button>
+  <span class="spacer"></span>
+  <span id="progress"></span>
+</header>
+<div class="banner" id="banner" hidden></div>
+<main>
+  <aside id="rail"></aside>
+  <section id="content"><div id="grid"></div></section>
+</main>
+<div id="backdrop" hidden></div>
+<aside id="drawer" hidden></aside>
+<div id="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

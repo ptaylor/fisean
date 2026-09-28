@@ -15,8 +15,8 @@ until the indexer is written.
 python3 browse.py            # opens http://127.0.0.1:8765/
 ```
 
-Nothing to install: the browser half is a single Python file using only the
-standard library.
+Nothing to install: the browser half is one Python file using only the standard
+library, plus a `static/` directory holding its stylesheet and script.
 
 ## Two parts
 

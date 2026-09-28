@@ -13,10 +13,11 @@ in executable names and paths are a portability tax that buys nothing.
 
 ## Status
 
-The **browser half exists and runs**: `browse.py`, one standard-library Python
-file that serves the interface and reads an index. It is developed against the
-synthetic fixture library in [`fixtures/`](fixtures/README.md), so every number
-on screen describes invented footage.
+The **browser half exists and runs**: `browse.py`, a standard-library Python
+server, and its interface as three ordinary files in [`static/`](static) that it
+serves from disk. It is developed against the synthetic fixture library in
+[`fixtures/`](fixtures/README.md), so every number on screen describes invented
+footage.
 
 **The indexer does not exist.** The requirements, the format and the stack notes
 below are decisions and intentions, not descriptions of working code. The one
@@ -305,7 +306,8 @@ Rules:
 
 | Path | What it is |
 | --- | --- |
-| `browse.py` | the browser half: CLI, HTTP server and the entire interface in one file |
+| `browse.py` | the browser half: CLI and HTTP server, nothing else |
+| `static/` | its interface — `index.html`, `app.css`, `app.js`, served from disk |
 | `fixtures/` | the synthetic library the browser is developed against — see [fixtures/README.md](fixtures/README.md) |
 | `docs/index-format.md` | the index contract, version 1 |
 | `vocabulary.yaml` | the labels the indexer will ask for: project source, hand-edited |
@@ -319,21 +321,24 @@ honest when it is also a file boundary.
 
 ### Python (standard library only)
 
-- **Role**: the language of both halves. The browser half is `browse.py`:
-  argument parsing, the HTTP server, the range-request handler and the whole
-  front end as `PAGE_CSS`, `PAGE_JS` and `PAGE_TEMPLATE`. No build step, no
-  third-party import, nothing to install.
+- **Role**: the language of both halves. The browser half is `browse.py` —
+  argument parsing, the HTTP server and the range-request handler — serving the
+  interface from `static/`. No build step, no third-party import, nothing to
+  install.
 - **Version**: Python 3.9 or newer; developed against 3.14.6.
   `from __future__ import annotations` keeps the newer annotation spellings legal
   on the older interpreters.
 - **Best Practices**:
-  - **One file, no dependencies.** Do not add a `static/` directory, a second
-    module for the browser half, or a package layout. The heavy dependencies
-    (PyTorch, the label models) belong to the indexer, and keeping the browser
-    free of them is the whole reason the interface reads JSON.
-  - The interface is embedded as strings, so a change to `PAGE_CSS`, `PAGE_JS` or
-    `PAGE_TEMPLATE` needs the second gate below — `py_compile` cannot see inside
-    them.
+  - **One program, no dependencies, no build step.** The front end is three
+    ordinary files in `static/`, read from disk; do not add a bundler, a
+    framework, npm, or a second Python module for the browser half. The heavy
+    dependencies (PyTorch, the label models) belong to the indexer, and keeping
+    the browser free of them is the whole reason the interface reads JSON.
+  - **The front end is files, not strings**, so the second gate below checks the
+    real script rather than a copy of it. `py_compile` cannot see into `static/`
+    at all. This replaced an earlier one-file design whose JavaScript and CSS were
+    Python string constants: 78% of a 1,300-line file that no editor, linter or
+    checker could see inside.
   - Build DOM with `createElement` and `textContent`. Never `innerHTML` with
     anything that came from the index: a label or summary is data, and treating it
     as markup would make the index an injection vector.
@@ -341,9 +346,10 @@ honest when it is also a file boundary.
     failure than the thing it reports.
   - `ThreadingHTTPServer`, so a slow media read cannot block the interface, and
     `--no-open` exists so a check can run without hijacking a browser.
-  - Values the interface needs but the index must not carry are substituted at
-    build time (the supported index versions) or served (the resolved media root),
-    never copied into a second place where they can drift.
+  - Values the interface needs but the index must not carry are served at
+    `/config.json` — the resolved media root, whether it is reachable, and the
+    index versions this server's interface can read — never copied into a second
+    place where they can drift.
 - **Docs**: https://docs.python.org/3/library/http.server.html ·
   https://docs.python.org/3/library/mimetypes.html
 
@@ -359,33 +365,38 @@ python3 browse.py --index DIR --media-root /Volumes/other/media
 ```
 
 The browser needs nothing but Python. `ffmpeg` and ImageMagick (`magick`) are
-needed only to rebuild the fixtures.
+needed only to rebuild the fixtures. An edit to `static/app.css` or
+`static/app.js` needs only a page reload: both are read from disk per request,
+and `index.html` always is.
 
 ## Checks before committing
 
 There is no test suite. Two gates must pass, and the second is not optional:
-**`py_compile` does not look inside the embedded JavaScript.**
+**`py_compile` cannot see anything under `static/`.**
 
 ```sh
-python3 -m py_compile browse.py
+python3 -m py_compile browse.py fixtures/make_fixtures.py
 
-python3 -c 'import importlib.util, sys; s = importlib.util.spec_from_file_location("b", "browse.py"); m = importlib.util.module_from_spec(s); sys.modules["b"] = m; s.loader.exec_module(m); open("/tmp/fisean-page.js", "w").write(m.PAGE_JS.replace("__INDEX_VERSIONS__", "[1]"))' \
-  && node --check /tmp/fisean-page.js
+node --check static/app.js
 ```
 
-Then look at it, because the gates only prove the code parses:
+The CSS has no checker at all. It is checked by looking, which is why the next
+step is not optional either:
 
 ```sh
 python3 browse.py --no-open    # then exercise what you changed in a browser
 ```
 
-The layout depends on CSS that no compiler checks, and the interface is
-JavaScript whose failures only appear when it runs. Two browser-side mistakes
-already cost time in this repo — a version check that referenced a Python
-constant, and a facet whose chip labels were built from the wrong field of a
-tuple — and both were invisible to the gates above.
+Three browser-side mistakes have already cost time in this repo, and all three
+were invisible to the gates above: a version check that referenced a Python
+constant, a facet whose chip labels were built from the wrong field of a tuple,
+and a card strip that sliced stills by position after the cover stopped being
+first. A fourth was caught *by* a gate rather than by the browser — the startup
+check for the front-end files looked for them in the wrong directory, and said
+so on the first run — which is the argument for making a half-installed copy fail
+loudly instead of serving a page with no stylesheet.
 
-The fixtures must also regenerate cleanly: running `make_fixtures.py` twice
+The fixtures must also regenerate cleanly: a second run of `make_fixtures.py`
 should leave `git status` unchanged.
 
 ## Licence — AGPL-3.0-or-later

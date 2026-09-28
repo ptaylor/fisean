@@ -225,10 +225,13 @@ directory. The exception is drawn narrowly:
   degrades to stills plus copy-path, and the browser must not present a broken
   player.
 
-Consequently there are two ways the browser may be run: from `file://`, where
-playback is impossible and stills and copy-path work; or from a small local
-server that serves the index read-only and the media read-only with range
-support, which is the mode that can also play video.
+**Correction (2026-09-28):** this document previously said the browser could be
+run two ways, one of them from `file://` with playback off but stills and
+copy-path working. That was wrong: the interface fetches `/index/manifest.json`,
+and a `file://` origin cannot fetch. There is **one** way to run the browser, and
+it is the small local server — which serves the index read-only and the media
+read-only with range requests, and is therefore also the mode that can play
+video.
 
 ## 8. Open questions in this contract
 
