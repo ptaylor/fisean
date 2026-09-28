@@ -140,6 +140,11 @@ the browser can decode it. What remains open:
   library being moved.
 - **Still selection is by scene change and then by score**, never by keyframe
   flags — see the traps under Target formats.
+- **`stills` is a timeline and the cover is a flag.** The entries are in ascending
+  `at_s`, and exactly one carries `"cover": true` — the frame the indexer judged
+  best. Which still represents a video is therefore stated rather than implied by
+  position, which with a timeline ordering would have meant "the opening shot".
+  A hand-picked cover is the same flag set from `overrides.yaml`.
 - **Playback is expected to fail for most of the legacy library** (browsers do
   not decode DV, MPEG-1, H.263 in 3GP, or Sorenson H.263 in FLV), which is why
   copy-full-path is a primary action rather than a fallback.
