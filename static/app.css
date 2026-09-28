@@ -9,6 +9,12 @@
   --dimmer: #6d767c;
   --accent: #c9a464;
   --accent-soft: rgba(201, 164, 100, 0.14);
+  /* Notices get their own colour rather than borrowing the accent. Amber means
+     "chosen or current" — a selected chip, the still being shown — so a warning
+     drawn in it reads as a highlight. Blue means "worth knowing" and cannot be
+     confused with a selection. */
+  --notice: #7d9cc4;
+  --notice-soft: rgba(125, 156, 196, 0.14);
   --teal: #6fa8a4;
   --radius: 10px;
 }
@@ -174,12 +180,12 @@ main { display: flex; align-items: flex-start; }
   background: rgba(8, 10, 12, 0.72); border-radius: 6px;
   padding: 2px 6px; font-size: 11.5px; color: var(--ink);
 }
-.pill.warn { color: var(--accent); }
+.pill.warn { color: var(--notice); }
 .card .body { padding: 10px 11px 12px; }
 /* Shared by the card and the row: both show the same metadata line, and scoping
    these to .card is how the row silently fell back to body size. */
 .when { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--dim); }
-.when .approx { color: var(--accent); }
+.when .approx { color: var(--notice); }
 .name { margin-top: 3px; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 .tag {
@@ -240,14 +246,14 @@ ul.labels .prov { color: var(--dimmer); font-size: 11.5px; margin-left: auto; wh
 summary { cursor: pointer; color: var(--ink); font-size: 13.5px; }
 .banner {
   margin: 0 18px 8px; padding: 9px 12px; border-radius: 8px; font-size: 13px;
-  background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
+  background: var(--notice-soft); border: 1px solid var(--notice); color: var(--notice);
 }
 .banner[hidden] { display: none; }
 .empty-state { color: var(--dim); padding: 40px 4px; }
 #progress { color: var(--dim); font-size: 12.5px; }
 #toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-  background: var(--panel-2); border: 1px solid var(--accent); color: var(--accent);
+  background: var(--panel-2); border: 1px solid var(--notice); color: var(--notice);
   padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 50;
 }
 #toast[hidden] { display: none; }
