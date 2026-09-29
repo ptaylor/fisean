@@ -1081,10 +1081,15 @@ def main(argv: list[str] | None = None) -> int:
         technical = record["technical"]
         shape = (f"{technical['width']}×{technical['height']}"
                  if technical.get("width") else "no video")
+        # The still count is padded and the elapsed time right-aligned, so the
+        # times form a column down the page instead of drifting with the width of
+        # the text before them. Seven characters is room for "99m59s", so a scan
+        # that takes 99 minutes does not shift the line, and one that takes longer
+        # still fits: human_duration switches to "1h45m" past an hour.
+        stills_text = f"{still_count} still" + ("" if still_count == 1 else "s")
         detail = (f"{colour.dim((technical.get('video_codec') or '--').ljust(10))} "
                   f"{shape:>9}  {human_duration(technical.get('duration_s')):>7}  "
-                  f"{still_count} still{'s' if still_count != 1 else ''}  "
-                  f"{colour.dim(f'{elapsed:.1f}s')}")
+                  f"{stills_text:<9} {colour.dim(f'{human_duration(elapsed):>7}')}")
         reporter.done(index, len(files), relative, detail)
 
     if args.jobs > 1:
