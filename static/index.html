@@ -48,6 +48,13 @@
 <div id="loading" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100"
      aria-valuenow="0" aria-label="Loading the index" aria-live="polite">
   <div class="loading-panel">
+    <!-- The mark and the name, above the bar. Hidden from assistive technology:
+         this element is a live region, so a name inside it would be announced
+         again on every progress update, and the page title already says it. -->
+    <div class="loading-brand" aria-hidden="true">
+      <img class="loading-mark" src="/static/icon.svg" width="56" height="56" alt="">
+      <p class="loading-name">físe<span>án</span></p>
+    </div>
     <div class="loading-track"><div class="loading-fill"></div></div>
     <p class="loading-text">reading the index…</p>
   </div>

@@ -36,12 +36,18 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 header {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 14px;
+  /* One row while it fits, a second row below that. The controls want about
+     740px between them; squeezing them instead collapsed the brand to nothing
+     and wrapped "Grid view" onto two lines. */
+  flex-wrap: wrap;
   padding: 12px 18px;
   background: rgba(12, 14, 16, 0.86);
   backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* The mark and the name are the one thing that must never be squeezed out, so
+   the brand neither grows nor shrinks and the search is what yields instead. */
+.brand { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 /* The mark is decorative: the heading beside it already says the name, so the
    img carries an empty alt rather than saying it twice to a screen reader. */
 .mark { width: 22px; height: 22px; display: block; flex: 0 0 auto; }
@@ -56,13 +62,17 @@ input[type=search], select {
   border: 1px solid var(--line); border-radius: 8px;
   padding: 7px 10px; font: inherit; font-size: 14px;
 }
-input[type=search] { flex: 1; min-width: 120px; }
+/* A 200px basis, not a 120px floor: the search fills its line when there is
+   room and moves to the next one when there is not, rather than being crushed
+   against the sort menu. */
+input[type=search] { flex: 1 1 200px; min-width: 0; }
 input[type=search]:focus, select:focus { outline: none; border-color: var(--accent); }
 .spacer { flex: 1; }
 button {
   background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-radius: 8px;
   padding: 7px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  white-space: nowrap;
 }
 button:hover { background: var(--panel-2); border-color: var(--dimmer); }
 button.primary { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -285,6 +295,18 @@ summary { cursor: pointer; color: var(--ink); font-size: 13.5px; }
 }
 #loading[hidden] { display: none; }
 .loading-panel { width: min(340px, 74vw); }
+/* The mark and the name, centred above the bar, so the wait shows what is
+   loading rather than a bare progress bar. The name is set exactly like the
+   header's, at a size that reads as a splash rather than a second title. */
+.loading-brand {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; margin-bottom: 24px;
+}
+.loading-mark { width: 56px; height: 56px; display: block; }
+.loading-name {
+  margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.01em;
+}
+.loading-name span { color: var(--accent); }
 .loading-track {
   height: 5px; border-radius: 999px; overflow: hidden;
   background: var(--panel-2); border: 1px solid var(--line-soft);
