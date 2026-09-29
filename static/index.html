@@ -31,7 +31,6 @@
   <button id="rail-toggle" title="Show or hide the filters">Filters</button>
   <button id="layout-toggle" title="Switch between the grid and a list with larger stills">List view</button>
   <span class="spacer"></span>
-  <span id="progress"></span>
 </header>
 <div class="banner" id="banner" hidden></div>
 <main>
@@ -41,6 +40,15 @@
 <div id="backdrop" hidden></div>
 <aside id="drawer" hidden></aside>
 <div id="toast" hidden></div>
+<!-- Shown while the records are fetched, and hidden again before the grid is
+     rendered so the first thing seen is the library, never an empty page. -->
+<div id="loading" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100"
+     aria-valuenow="0" aria-label="Loading the index" aria-live="polite">
+  <div class="loading-panel">
+    <div class="loading-track"><div class="loading-fill"></div></div>
+    <p class="loading-text">reading the index…</p>
+  </div>
+</div>
 <script src="/static/app.js"></script>
 </body>
 </html>

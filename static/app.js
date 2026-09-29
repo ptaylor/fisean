@@ -590,6 +590,34 @@ function toast(message) {
 
 /* ----------------------------------------------------------------- loading */
 
+// The overlay is held back briefly. A twelve-record fixture loads in about 20ms,
+// and a full-screen overlay that appears and vanishes inside one frame reads as a
+// glitch rather than as progress; it is only worth showing once the wait is
+// noticeable, which is what a few hundred records is.
+const LOADING_DELAY_MS = 150;
+const loading = document.getElementById('loading');
+let loadingTimer = null;
+
+function showLoading(message) {
+  loading.querySelector('.loading-text').textContent = message;
+  clearTimeout(loadingTimer);
+  if (!loading.hidden) return;
+  loadingTimer = setTimeout(() => { loading.hidden = false; }, LOADING_DELAY_MS);
+}
+
+function setLoading(done, total) {
+  const percent = total ? Math.round((done / total) * 100) : 0;
+  loading.setAttribute('aria-valuenow', String(percent));
+  loading.querySelector('.loading-fill').style.width = `${percent}%`;
+  loading.querySelector('.loading-text').textContent =
+    total ? `loading ${done} of ${total} records` : 'reading the index…';
+}
+
+function hideLoading() {
+  clearTimeout(loadingTimer);
+  loading.hidden = true;
+}
+
 async function loadConcurrently(records, limit, onProgress) {
   const out = [];
   const failed = [];
@@ -621,6 +649,7 @@ async function loadConcurrently(records, limit, onProgress) {
 }
 
 function fatal(title, detail, hint) {
+  hideLoading();
   document.querySelector('main').replaceChildren(
     el('div', { class: 'fatal' },
       el('h1', { text: title }),
@@ -631,6 +660,7 @@ function fatal(title, detail, hint) {
 
 async function start() {
   let manifest, config;
+  showLoading('reading the index…');
   try {
     const [manifestResponse, configResponse] = await Promise.all([
       fetch('/index/manifest.json', { cache: 'no-store' }),
@@ -677,12 +707,9 @@ async function start() {
     return;
   }
 
-  document.getElementById('progress').textContent = `loading ${names.length} records…`;
-  const loaded = await loadConcurrently(names, 8, (done, total) => {
-    document.getElementById('progress').textContent = `loading ${done}/${total} records…`;
-  });
+  setLoading(0, names.length);
+  const loaded = await loadConcurrently(names, 8, (done, total) => setLoading(done, total));
   state.assets = loaded.assets;
-  document.getElementById('progress').textContent = '';
 
   if (loaded.failed.length) {
     // The full list goes to the console, which is where someone looking into it
@@ -714,6 +741,9 @@ async function start() {
   }
 
   render();
+  // Hidden after the first render, not before: a flash of empty grid between the
+  // two would be worse than the overlay staying a moment longer.
+  hideLoading();
 }
 
 /* ------------------------------------------------------------------ events */

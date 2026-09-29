@@ -257,7 +257,38 @@ summary { cursor: pointer; color: var(--ink); font-size: 13.5px; }
 }
 .banner[hidden] { display: none; }
 .empty-state { color: var(--dim); padding: 40px 4px; }
-#progress { color: var(--dim); font-size: 12.5px; }
+
+/* --------------------------------------------------------------- loading */
+/* Covers the page while the records are fetched. The blur and the dark fill are
+   the same treatment as the header, so it reads as the interface waiting rather
+   than a dialog interrupting it. Above the drawer (40) and the toast (50),
+   because nothing underneath is usable yet. */
+#loading {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(12, 14, 16, 0.78);
+  backdrop-filter: saturate(140%) blur(6px);
+}
+#loading[hidden] { display: none; }
+.loading-panel { width: min(340px, 74vw); }
+.loading-track {
+  height: 5px; border-radius: 999px; overflow: hidden;
+  background: var(--panel-2); border: 1px solid var(--line-soft);
+}
+.loading-fill {
+  height: 100%; width: 0; border-radius: 999px; background: var(--accent);
+  transition: width 140ms ease;
+}
+.loading-text {
+  margin: 11px 0 0; text-align: center;
+  font-size: 12.5px; color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The bar still reports progress, it just stops sliding to it. */
+  .loading-fill { transition: none; }
+}
+
 #toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
   background: var(--panel-2); border: 1px solid var(--notice); color: var(--notice);
