@@ -592,18 +592,32 @@ function toast(message) {
 
 async function loadConcurrently(records, limit, onProgress) {
   const out = [];
+  const failed = [];
   let next = 0, done = 0;
   const worker = async () => {
     while (next < records.length) {
       const index = next++;
-      const response = await fetch(`/index/videos/${encodeURIComponent(records[index])}.json`);
-      if (response.ok) out.push(await response.json());
+      const id = records[index];
+      // Every record is fetched inside its own try. Without it, one unreadable
+      // record rejected the worker, which rejected Promise.all, which threw out
+      // of start() and left the page on "loading … records…" for ever with the
+      // grid empty and nothing said. One bad file must cost one card.
+      try {
+        const response = await fetch(`/index/videos/${encodeURIComponent(id)}.json`);
+        if (response.ok) {
+          out.push(await response.json());
+        } else {
+          failed.push({ id, reason: `HTTP ${response.status}` });
+        }
+      } catch (error) {
+        failed.push({ id, reason: error.message });
+      }
       done++;
       if (done % 5 === 0 || done === records.length) onProgress(done, records.length);
     }
   };
   await Promise.all(Array.from({ length: Math.min(limit, records.length) }, worker));
-  return out;
+  return { assets: out, failed };
 }
 
 function fatal(title, detail, hint) {
@@ -664,22 +678,39 @@ async function start() {
   }
 
   document.getElementById('progress').textContent = `loading ${names.length} records…`;
-  state.assets = await loadConcurrently(names, 8, (done, total) => {
+  const loaded = await loadConcurrently(names, 8, (done, total) => {
     document.getElementById('progress').textContent = `loading ${done}/${total} records…`;
   });
+  state.assets = loaded.assets;
   document.getElementById('progress').textContent = '';
 
+  if (loaded.failed.length) {
+    // The full list goes to the console, which is where someone looking into it
+    // will be; the banner names a few and says what to do about them.
+    console.warn('records that could not be read:', loaded.failed);
+  }
+
   const banner = document.getElementById('banner');
+  const notices = [];
+  if (loaded.failed.length) {
+    const named = loaded.failed.slice(0, 3).map(f => f.id).join(', ');
+    const rest = loaded.failed.length > 3 ? ` and ${loaded.failed.length - 3} more` : '';
+    notices.push(`${loaded.failed.length} record${loaded.failed.length > 1 ? 's' : ''} could not `
+      + `be read (${named}${rest}) — the rest of the library is shown. `
+      + 'Run "fisean scan" over the library again to rewrite them.');
+  }
   if (config.media_root_available === false) {
     // Expected when the library is on an unmounted disk, and not an error: the
     // stills and the copy action both still work.
-    banner.hidden = false;
-    banner.textContent = `The media directory is not reachable (${config.media_root || 'unknown'}), `
-      + 'so playback is off. Stills and copy-path still work.';
+    notices.push(`The media directory is not reachable (${config.media_root || 'unknown'}), `
+      + 'so playback is off. Stills and copy-path still work.');
   } else if (manifest.errors && manifest.errors.length) {
+    notices.push(`${manifest.errors.length} file${manifest.errors.length > 1 ? 's' : ''} could not be read: `
+      + manifest.errors.map(e => `${e.path} (${e.stage}: ${e.message})`).join('; '));
+  }
+  if (notices.length) {
     banner.hidden = false;
-    banner.textContent = `${manifest.errors.length} file${manifest.errors.length > 1 ? 's' : ''} could not be read: `
-      + manifest.errors.map(e => `${e.path} (${e.stage}: ${e.message})`).join('; ');
+    banner.textContent = notices.join(' ');
   }
 
   render();
