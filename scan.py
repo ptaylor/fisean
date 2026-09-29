@@ -826,10 +826,25 @@ def scan_one(path: Path, root: Path, index_dir: Path, existing: dict | None,
     return record, None, warnings
 
 
+def write_json(path: Path, payload) -> None:
+    """Write JSON so an interrupted write cannot leave half a file behind.
+
+    Written under a temporary name and renamed into place. A single write_text is
+    not safe here: a record truncated at 632 bytes by a killed scan made one real
+    library unloadable in the browser, because the browser gave up on the whole
+    page at the first record it could not parse. The rename is atomic, so a reader
+    sees either the old file or the new one and never a fragment, and a scan that
+    dies mid-write leaves a .tmp file that nothing globs for and the next scan
+    does not touch.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    os.replace(temporary, path)
+
+
 def write_record(index_dir: Path, record: dict) -> None:
-    target = index_dir / "videos" / f"{record['id']}.json"
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
+    write_json(index_dir / "videos" / f"{record['id']}.json", record)
 
 
 # ---------------------------------------------------------------- traversal
@@ -865,17 +880,24 @@ def find_media(root: Path, index_dir: Path, include_audio: bool) -> list[Path]:
     return found
 
 
-def existing_records(index_dir: Path) -> dict[str, dict]:
+def existing_records(index_dir: Path) -> tuple[dict[str, dict], list[str]]:
+    """The records already in the index, and the ids of any that would not parse.
+
+    A record that cannot be read is not quietly skipped. It is reported, and
+    because it is absent from the returned map the asset it belongs to counts as
+    new and is indexed again - which is also what repairs it.
+    """
     records: dict[str, dict] = {}
+    unreadable: list[str] = []
     directory = index_dir / "videos"
     if not directory.is_dir():
-        return records
+        return records, unreadable
     for path in sorted(directory.glob("*.json")):
         try:
             records[path.stem] = json.loads(path.read_text())
         except (OSError, json.JSONDecodeError):
-            continue
-    return records
+            unreadable.append(path.stem)
+    return records, unreadable
 
 
 def ffmpeg_facts() -> list[dict]:
@@ -1019,7 +1041,7 @@ def main(argv: list[str] | None = None) -> int:
         reporter.summary([("no supported files found", "yellow")])
         return 0
 
-    records = existing_records(index_dir)
+    records, unreadable = existing_records(index_dir)
     by_relative: dict[str, Path] = {}
     for path in files:
         by_relative[path.relative_to(root).as_posix()] = path
@@ -1046,6 +1068,11 @@ def main(argv: list[str] | None = None) -> int:
             ("rules", f"one pass at {ANALYSIS_WIDTH}px, {args.stills} stills per video max, "
                       f"{args.still_width}px wide"),
         ])
+
+    if unreadable:
+        shown = ", ".join(unreadable[:3]) + (" …" if len(unreadable) > 3 else "")
+        reporter.warn(f"{len(unreadable)} record(s) in the index could not be read "
+                      f"({shown}); indexing them again")
 
     if args.dry_run:
         for index, path in enumerate(files, start=1):
@@ -1162,8 +1189,7 @@ def main(argv: list[str] | None = None) -> int:
     manifest["sampling"] = {"sample_fps": args.sample_fps, "analysis_width": ANALYSIS_WIDTH}
     if errors:
         manifest["errors"] = errors
-    (index_dir / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    write_json(index_dir / "manifest.json", manifest)
 
     elapsed = time.monotonic() - started
     if warnings:
