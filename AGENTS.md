@@ -432,6 +432,15 @@ honest when it is also a file boundary.
     `scdet`'s `mafd`, a plain mean absolute frame difference, is used instead and
     behaves as expected. The first frame of every file reports `mafd` 0 for want
     of a predecessor, so it is excluded from the ratio.
+  - **A value that is not a number is not a measurement.** `blurdetect` reports
+    `blur=nan` on a frame it cannot measure. One such value in a sample list made
+    the 10th percentile `nan`, and Python writes that as a bare `NaN` — which is
+    not JSON, so the browser's `JSON.parse` rejects the **whole record** and the
+    card is silently lost: three files out of 536 in the first real library.
+    `as_float` refuses `nan` and `inf` as no measurement, and `write_json` passes
+    `allow_nan=False` so this class of fault stops at the scanner. A record whose
+    measurements change meaning invalidates the version these were written under,
+    which is what `SCAN_VERSION` is for.
   - **`avg_frame_rate` is unreliable.** DV reports `60000/1` for a 25fps stream,
     so a sane `r_frame_rate` wins when the average is absurd — and audio-only
     streams report `0/0`, which must not be divided.

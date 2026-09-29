@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -44,7 +45,12 @@ from pathlib import Path
 
 # ---------------------------------------------------------------- constants
 
-SCAN_VERSION = "1"
+# Bumped to 2 on 2026-09-29: a measurement that is not a number is now refused
+# rather than stored, so a record written under version 1 can hold a value this
+# version would not write. The bump is what makes the next scan re-measure the
+# files affected - three records in one real library were unreadable in the
+# browser until it was done.
+SCAN_VERSION = "2"
 INDEX_VERSION = 1
 ASSET_VERSION = 1
 INDEX_DIR_NAME = "fisean-index"
@@ -314,10 +320,21 @@ def parse_rate(value: str | None) -> float | None:
 
 
 def as_float(value) -> float | None:
+    """A number, or None when the value is not one.
+
+    `nan` and `inf` are refused rather than returned. ffmpeg reports `blur=nan`
+    for a frame it cannot measure, and one such value in a sample list made
+    percentile() return nan, which Python then writes as a bare NaN - not JSON,
+    so JSON.parse rejects the whole record and the browser loses that card. That
+    is not hypothetical: three records in a real library, all of them with one
+    blur that came back nan. A value that is not a number is treated as no
+    measurement, which is what null already means in this index.
+    """
     try:
-        return float(value)
+        number = float(value)
     except (TypeError, ValueError):
         return None
+    return number if math.isfinite(number) else None
 
 
 def as_int(value) -> int | None:
@@ -839,12 +856,23 @@ def write_json(path: Path, payload) -> None:
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    # allow_nan=False, so a number that is not a number is refused here instead
+    # of being written as a bare NaN. JSON has no NaN, and the browser's
+    # JSON.parse rejects the whole record rather than the one field, which costs
+    # a card. Refusing names the fault at scan time; write_record below turns
+    # that into a manifest error against the one file rather than a dead scan.
+    temporary.write_text(json.dumps(payload, indent=2, ensure_ascii=False,
+                                    allow_nan=False) + "\n")
     os.replace(temporary, path)
 
 
-def write_record(index_dir: Path, record: dict) -> None:
-    write_json(index_dir / "videos" / f"{record['id']}.json", record)
+def write_record(index_dir: Path, record: dict) -> str | None:
+    """Write one record, returning a message if it could not be written."""
+    try:
+        write_json(index_dir / "videos" / f"{record['id']}.json", record)
+    except ValueError as error:
+        return f"record not written: {error}"
+    return None
 
 
 # ---------------------------------------------------------------- traversal
@@ -1133,23 +1161,36 @@ def main(argv: list[str] | None = None) -> int:
                   f"{stills_text:<9} {colour.dim(f'{human_duration(elapsed):>7}')}")
         reporter.done(index, len(files), relative, detail)
 
+    def write_record_or_report(relative: str, record: dict) -> None:
+        """Write one record, naming the file if the write is refused.
+
+        A refusal from write_json means this program produced a number that is
+        not a number - a bug here, not a bad file. It is still better reported
+        against one asset than left to end a 500-file scan at file 400, and the
+        manifest says which record went missing.
+        """
+        problem = write_record(index_dir, record)
+        if problem:
+            errors.append({"path": relative, "stage": "write", "message": problem})
+            reporter.warn(f"{relative}: {problem}")
+
     if args.jobs > 1:
         with ThreadPoolExecutor(max_workers=args.jobs) as pool:
             results = list(pool.map(handle, files))
         for index, (path, result) in enumerate(zip(files, results), start=1):
             outcome, record, error, problems, seconds = result
-            report(index, outcome, record, error, path.relative_to(root).as_posix(),
-                   problems, seconds)
+            relative = path.relative_to(root).as_posix()
+            report(index, outcome, record, error, relative, problems, seconds)
             if record is not None:
-                write_record(index_dir, record)
+                write_record_or_report(relative, record)
     else:
         for index, path in enumerate(files, start=1):
-            reporter.working(index, len(files), path.relative_to(root).as_posix())
+            relative = path.relative_to(root).as_posix()
+            reporter.working(index, len(files), relative)
             outcome, record, error, problems, seconds = handle(path)
-            report(index, outcome, record, error, path.relative_to(root).as_posix(),
-                   problems, seconds)
+            report(index, outcome, record, error, relative, problems, seconds)
             if record is not None:
-                write_record(index_dir, record)
+                write_record_or_report(relative, record)
 
     pruned: list[str] = []
     for name in stale:
