@@ -269,19 +269,33 @@ def first_line(text: str) -> str:
     return ""
 
 
-def tidy_error(text: str, path: Path) -> str:
-    """Remove the input path ffprobe and ffmpeg prefix their complaints with.
+# ffmpeg prefixes a component's complaint with the component and a heap address:
+#   [mov,mp4,m4a,3gp,3g2,mj2 @ 0x7f7960904140] moov atom not found
+# The address is different on every run, so leaving it in would make the manifest
+# differ from itself between two scans of an unchanged library - noise in the
+# index and a spurious diff in any repository that holds one. It tells a reader
+# nothing, so the whole bracketed prefix goes.
+FFMPEG_CONTEXT = re.compile(r"^\[[^\]]*\]\s*")
 
-    The index may contain no absolute path but `media_root`, and no machine or
-    user names (rule 2), so a message reading
-    "/Users/someone/Videos/clip.mp4: Invalid data found" must not reach it. The
-    stage field already says which step failed, so dropping the prefix loses
-    nothing.
+
+def tidy_error(text: str, path: Path) -> str:
+    """Make a message from ffprobe or ffmpeg fit to go in the index.
+
+    Two things have to go. The input path, because the index may contain no
+    absolute path but `media_root` and no machine or user names (rule 2), so a
+    message reading "/Users/someone/Videos/clip.mp4: Invalid data found" must not
+    reach it. And ffmpeg's bracketed log context, for the reason above.
+
+    What is kept is the first line, which is also the most specific one: a
+    truncated MP4 gives "[mov,... @ 0x...] moov atom not found" followed by the
+    generic "Invalid data found when processing input", and the first of those is
+    the one that says what is actually wrong.
     """
     cleaned = first_line(text)
     for prefix in (f"{path}: ", f"{path.resolve()}: "):
         if cleaned.startswith(prefix):
             cleaned = cleaned[len(prefix):]
+    cleaned = FFMPEG_CONTEXT.sub("", cleaned, count=1).strip()
     return cleaned or "failed"
 
 
