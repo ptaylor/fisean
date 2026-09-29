@@ -29,10 +29,13 @@
     <option value="name">File name</option>
   </select>
   <button id="rail-toggle" title="Show or hide the filters">Filters</button>
-  <button id="layout-toggle" title="Switch between the grid and a list with larger stills">List view</button>
+  <button id="layout-toggle" title="Switch between the list and a grid of covers">Grid view</button>
   <span class="spacer"></span>
 </header>
-<div class="banner" id="banner" hidden></div>
+<div class="banner" id="banner" hidden>
+  <span id="banner-text"></span>
+  <button id="banner-close" title="Dismiss this notice" aria-label="Dismiss this notice">×</button>
+</div>
 <main>
   <aside id="rail"></aside>
   <section id="content"><div id="grid"></div></section>

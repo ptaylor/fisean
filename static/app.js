@@ -47,7 +47,10 @@ const state = {
   filters: new Map(),   // axis -> Set(values)
   query: '',
   sort: 'date-desc',
-  layout: 'grid',
+  // The list is the default because it is the one that shows what was extracted:
+  // the stills, the duration, the path and the device all at once, which is what
+  // this tool is for. The grid is the overview you switch to.
+  layout: 'list',
   playing: false,
 };
 
@@ -263,29 +266,34 @@ function renderItems(items) {
   grid.replaceChildren(...items.map(state.layout === 'list' ? renderRow : renderCard));
 }
 
-// One video per row, so the stills can be shown at a size worth looking at. The
-// row is the same asset as a card, with room for the path and the device.
+// One video per row. Every still is the same size here, the cover included, so
+// the row reads as a strip of what was extracted rather than a big picture with
+// some small ones beside it. The cover is left at full opacity and the rest are
+// dimmed, which marks it without spending a border on it.
 function renderRow(asset) {
   const best = cover(asset);
   const bestIndex = best ? asset.stills.indexOf(best) : 0;
-  const extras = (asset.stills || []).filter(still => still !== best).slice(0, 6);
+  const shown = (asset.stills || []).slice(0, 6);
 
-  const coverBox = el('div', { class: 'row-cover' });
-  if (best) coverBox.append(el('img', { src: stillURL(best.path), alt: '', loading: 'lazy' }));
-  else coverBox.append(el('div', { class: 'none', text: asset.technical?.has_video === false
-    ? 'no stills — audio only' : 'no stills' }));
-
-  const stills = extras.length
-    ? el('div', { class: 'row-stills' }, extras.map(still => el('img', {
-        src: stillURL(still.path), alt: '', loading: 'lazy',
-        title: `${still.at_s}s — ${still.reason || 'no reason recorded'}`,
-        onclick: event => {
-          event.stopPropagation();
-          openAsset(asset.id, asset.stills.indexOf(still));
-        },
-      })))
-    : el('div', { class: 'row-stills' }, el('span', { class: 'note', text:
-        (asset.stills || []).length ? 'one still' : '' }));
+  const strip = el('div', { class: 'row-stills' });
+  if (shown.length) {
+    strip.append(...shown.map(still => el('img', {
+      src: stillURL(still.path), alt: '', loading: 'lazy',
+      class: still === best ? 'cover' : '',
+      title: `${still.at_s}s — ${still.reason || 'no reason recorded'}`,
+      onclick: event => {
+        event.stopPropagation();
+        openAsset(asset.id, asset.stills.indexOf(still));
+      },
+    })));
+  } else {
+    // Nothing to show, so the placeholder takes the tile's place rather than
+    // leaving the row ragged - and there is no "one still" label any more: with
+    // the still already beside it, saying so was telling the reader what they
+    // could see.
+    strip.append(el('div', { class: 'none', text: asset.technical?.has_video === false
+      ? 'no stills — audio only' : 'no stills' }));
+  }
 
   const source = asset.captured?.at_source;
   const approximate = source === 'file_mtime' || source === 'filename';
@@ -295,8 +303,7 @@ function renderRow(asset) {
     class: 'row', 'data-selected': String(state.selected === asset.id),
     onclick: () => openAsset(asset.id, bestIndex),
   },
-    coverBox,
-    stills,
+    strip,
     el('div', { class: 'row-meta' },
       el('div', { class: 'name', text: fileName(asset.source?.path) }),
       el('div', { class: 'when' },
@@ -305,8 +312,12 @@ function renderRow(asset) {
         el('span', { text: duration(asset.technical?.duration_s) }),
         el('span', { text: '·' }),
         el('span', { text: container(asset) }),
-        el('span', { text: '·' }),
-        el('span', { text: `${(asset.stills || []).length} still${(asset.stills || []).length === 1 ? '' : 's'}` }),
+        // The count is only worth a line when there is more than one still to
+        // count: the grid card already hides it for a single still, and the
+        // strip shows them all anyway.
+        (asset.stills || []).length > 1
+          ? el('span', { text: `· ${asset.stills.length} stills` })
+          : null,
         asset.technical?.has_video && !playable(asset)
           ? el('span', { class: 'pill', text: 'player?',
                          title: 'a browser cannot decode this format; use the copied path' })
@@ -648,8 +659,31 @@ async function loadConcurrently(records, limit, onProgress) {
   return { assets: out, failed };
 }
 
+/* ------------------------------------------------------------------ banner */
+
+// The notice can be dismissed, and the dismissal lasts for the page rather than
+// being remembered: a notice that can be silenced for good is a notice that gets
+// missed, and this one names files that could not be read.
+function showBanner(message) {
+  document.getElementById('banner-text').textContent = message;
+  document.getElementById('banner').hidden = false;
+}
+
+function hideBanner() {
+  document.getElementById('banner').hidden = true;
+}
+
+function syncLayoutButton() {
+  // The label names the layout a click would switch *to*, derived from the state
+  // rather than written into the page as well - two places for one fact is how
+  // the button ends up offering the layout already on screen.
+  document.getElementById('layout-toggle').textContent =
+    state.layout === 'grid' ? 'List view' : 'Grid view';
+}
+
 function fatal(title, detail, hint) {
   hideLoading();
+  hideBanner();
   document.querySelector('main').replaceChildren(
     el('div', { class: 'fatal' },
       el('h1', { text: title }),
@@ -717,7 +751,6 @@ async function start() {
     console.warn('records that could not be read:', loaded.failed);
   }
 
-  const banner = document.getElementById('banner');
   const notices = [];
   if (loaded.failed.length) {
     const named = loaded.failed.slice(0, 3).map(f => f.id).join(', ');
@@ -735,10 +768,7 @@ async function start() {
     notices.push(`${manifest.errors.length} file${manifest.errors.length > 1 ? 's' : ''} could not be read: `
       + manifest.errors.map(e => `${e.path} (${e.stage}: ${e.message})`).join('; '));
   }
-  if (notices.length) {
-    banner.hidden = false;
-    banner.textContent = notices.join(' ');
-  }
+  if (notices.length) showBanner(notices.join(' '));
 
   render();
   // Hidden after the first render, not before: a flash of empty grid between the
@@ -762,11 +792,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('layout-toggle').addEventListener('click', () => {
     state.layout = state.layout === 'grid' ? 'list' : 'grid';
-    document.getElementById('layout-toggle').textContent =
-      state.layout === 'grid' ? 'List view' : 'Grid view';
+    syncLayoutButton();
     render();
   });
   document.getElementById('backdrop').addEventListener('click', closeDrawer);
+  document.getElementById('banner-close').addEventListener('click', hideBanner);
+  syncLayoutButton();
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') { closeDrawer(); return; }
