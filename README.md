@@ -8,27 +8,35 @@ by filename. *Físeán* is Irish for *video*.
 
 ## Status
 
-**The browser half runs; the indexer does not exist yet.** You can look at the
-interface today — it reads a synthetic fixture library of twelve invented videos
-(see [fixtures/README.md](fixtures/README.md)), so everything on screen is fake
-until the indexer is written.
+**Both halves work.** `fisean scan DIR` indexes the videos under `DIR` —
+technical metadata, duration, capture dates, quality measurements and the stills
+that represent each one — and `fisean browse DIR` shows them. Content
+classification is not written yet, so a scanned library has no labels or
+summaries: the browser's "who & what" filter is empty and says so, and a real
+library is not yet described by anything but its own measurements.
 
 ```sh
 ./install.sh                 # puts the fisean command in ~/bin
-fisean browse DIR            # serve the index in DIR and open it
+
+fisean scan DIR              # index the videos under DIR
+fisean browse DIR            # serve that index and open it
 fisean open DIR              # the same command, under its other name
 ```
 
 Or without installing anything:
 
 ```sh
-python3 fisean.py browse DIR
-python3 fisean.py browse     # the committed fixture, for a look around
+python3 fisean.py scan DIR      # or: python3 scan.py DIR --index /tmp/idx
+python3 fisean.py browse DIR    # or: python3 browse.py DIR
+python3 fisean.py browse        # the committed fixture, for a look around
 ```
 
-`DIR` is either the index directory itself (the one holding `manifest.json`) or a
-library root with an `index/` subdirectory in it — both are accepted. Options
-after `DIR` go straight to the browser: `fisean browse DIR --port 9000 --no-open`.
+`DIR` is either a library root or the index directory itself, and both commands
+accept either, so the same path can be handed to both. A library root is looked
+for a `fisean-index` subdirectory — that is where `scan` writes unless `--index`
+says otherwise, and any name works when you point at the index directly. Options
+after `DIR` go straight to the command:
+`fisean scan DIR --force --jobs 4`, `fisean browse DIR --port 9000 --no-open`.
 
 ## Two parts
 
@@ -37,7 +45,7 @@ without rewriting the other:
 
 | Part | What it does |
 | --- | --- |
-| **Indexer** | Walks a directory hierarchy offline and writes an index: metadata, classifications, keywords, a summary, and the extracted stills. **Not written yet.** |
+| **Indexer** | `scan.py`: walks a directory hierarchy offline and writes an index — technical metadata, duration, capture dates, quality measurements, and the stills that best represent each video. Classification and summaries are **not** written yet. |
 | **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality — as a grid of covers or a list with larger stills, showing every extracted still rather than only the cover. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
 
 The index format is the contract between them, specified in

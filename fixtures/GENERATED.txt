@@ -6,71 +6,71 @@
 fixtures/media/2011/dsc01234.avi
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v mpeg4 -q:v 6 fixtures/media/2011/dsc01234.avi
 
-fixtures/index/stills/3f9a1c07-dsc01234/01.jpg
-    magick -size 480x270 'gradient:#3a4d38-#16210f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'garden · shot 1' -quality 72 fixtures/index/stills/3f9a1c07-dsc01234/01.jpg
+fixtures/fisean-index/stills/3f9a1c07-dsc01234/01.jpg
+    magick -size 480x270 'gradient:#3a4d38-#16210f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'garden · shot 1' -quality 72 fixtures/fisean-index/stills/3f9a1c07-dsc01234/01.jpg
 
-fixtures/index/stills/3f9a1c07-dsc01234/02.jpg
-    magick -size 480x270 'gradient:#57704a-#1c2a17' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'garden · shot 7' -quality 72 fixtures/index/stills/3f9a1c07-dsc01234/02.jpg
+fixtures/fisean-index/stills/3f9a1c07-dsc01234/02.jpg
+    magick -size 480x270 'gradient:#57704a-#1c2a17' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'garden · shot 7' -quality 72 fixtures/fisean-index/stills/3f9a1c07-dsc01234/02.jpg
 
-fixtures/index/stills/3f9a1c07-dsc01234/03.jpg
-    magick -size 480x270 'gradient:#7d8f66-#2b3a25' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'garden · shot 11' -quality 72 fixtures/index/stills/3f9a1c07-dsc01234/03.jpg
+fixtures/fisean-index/stills/3f9a1c07-dsc01234/03.jpg
+    magick -size 480x270 'gradient:#7d8f66-#2b3a25' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'garden · shot 11' -quality 72 fixtures/fisean-index/stills/3f9a1c07-dsc01234/03.jpg
 
 fixtures/media/2016/img0042.mov
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v libx264 -pix_fmt yuv420p -movflags +faststart fixtures/media/2016/img0042.mov
 
-fixtures/index/stills/a41b2e88-img0042/01.jpg
-    magick -size 480x270 'gradient:#2e6d8e-#c9d9c0' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'beach · shot 1' -quality 72 fixtures/index/stills/a41b2e88-img0042/01.jpg
+fixtures/fisean-index/stills/a41b2e88-img0042/01.jpg
+    magick -size 480x270 'gradient:#2e6d8e-#c9d9c0' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'beach · shot 1' -quality 72 fixtures/fisean-index/stills/a41b2e88-img0042/01.jpg
 
-fixtures/index/stills/a41b2e88-img0042/02.jpg
-    magick -size 480x270 'gradient:#4b8fa8-#e6d8b8' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'beach · shot 3' -quality 72 fixtures/index/stills/a41b2e88-img0042/02.jpg
+fixtures/fisean-index/stills/a41b2e88-img0042/02.jpg
+    magick -size 480x270 'gradient:#4b8fa8-#e6d8b8' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'beach · shot 3' -quality 72 fixtures/fisean-index/stills/a41b2e88-img0042/02.jpg
 
-fixtures/index/stills/a41b2e88-img0042/03.jpg
-    magick -size 480x270 'gradient:#87b6c4-#f0e4c8' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'beach · shot 6' -quality 72 fixtures/index/stills/a41b2e88-img0042/03.jpg
+fixtures/fisean-index/stills/a41b2e88-img0042/03.jpg
+    magick -size 480x270 'gradient:#87b6c4-#f0e4c8' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'beach · shot 6' -quality 72 fixtures/fisean-index/stills/a41b2e88-img0042/03.jpg
 
 fixtures/media/2003/mvi1234.mpeg
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=352x288:rate=25 -t 2 -c:v mpeg1video -q:v 8 fixtures/media/2003/mvi1234.mpeg
 
-fixtures/index/stills/7c2d5f10-mvi1234/01.jpg
-    magick -size 480x270 'gradient:#6b4a2f-#1a1208' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'birthday · shot 1' -quality 72 fixtures/index/stills/7c2d5f10-mvi1234/01.jpg
+fixtures/fisean-index/stills/7c2d5f10-mvi1234/01.jpg
+    magick -size 480x270 'gradient:#6b4a2f-#1a1208' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'birthday · shot 1' -quality 72 fixtures/fisean-index/stills/7c2d5f10-mvi1234/01.jpg
 
-fixtures/index/stills/7c2d5f10-mvi1234/02.jpg
-    magick -size 480x270 'gradient:#8a6b45-#241a10' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'birthday · shot 3' -quality 72 fixtures/index/stills/7c2d5f10-mvi1234/02.jpg
+fixtures/fisean-index/stills/7c2d5f10-mvi1234/02.jpg
+    magick -size 480x270 'gradient:#8a6b45-#241a10' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'birthday · shot 3' -quality 72 fixtures/fisean-index/stills/7c2d5f10-mvi1234/02.jpg
 
 fixtures/media/unknown/clip0007.dv
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=720x576:rate=25 -t 0.4 -c:v dvvideo -pix_fmt yuv420p fixtures/media/unknown/clip0007.dv
 
-fixtures/index/stills/0e6b3d55-clip0007/01.jpg
-    magick -size 480x270 'gradient:#5a5f52-#171a13' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'field · 88s' -quality 72 fixtures/index/stills/0e6b3d55-clip0007/01.jpg
+fixtures/fisean-index/stills/0e6b3d55-clip0007/01.jpg
+    magick -size 480x270 'gradient:#5a5f52-#171a13' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'field · 88s' -quality 72 fixtures/fisean-index/stills/0e6b3d55-clip0007/01.jpg
 
-fixtures/index/stills/0e6b3d55-clip0007/02.jpg
-    magick -size 480x270 'gradient:#4a4f45-#12140f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'field · 190s' -quality 72 fixtures/index/stills/0e6b3d55-clip0007/02.jpg
+fixtures/fisean-index/stills/0e6b3d55-clip0007/02.jpg
+    magick -size 480x270 'gradient:#4a4f45-#12140f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'field · 190s' -quality 72 fixtures/fisean-index/stills/0e6b3d55-clip0007/02.jpg
 
 fixtures/media/2007/vid00123.3gp
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=176x144:rate=12 -t 2 -c:v h263 -pix_fmt yuv420p fixtures/media/2007/vid00123.3gp
 
-fixtures/index/stills/b8f4a1c2-vid00123/01.jpg
-    magick -size 480x270 'gradient:#4a4a52-#141418' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'street · shot 2' -quality 72 fixtures/index/stills/b8f4a1c2-vid00123/01.jpg
+fixtures/fisean-index/stills/b8f4a1c2-vid00123/01.jpg
+    magick -size 480x270 'gradient:#4a4a52-#141418' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'street · shot 2' -quality 72 fixtures/fisean-index/stills/b8f4a1c2-vid00123/01.jpg
 
-fixtures/index/stills/b8f4a1c2-vid00123/02.jpg
-    magick -size 480x270 'gradient:#5c5c63-#1a1a1e' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'street · shot 4' -quality 72 fixtures/index/stills/b8f4a1c2-vid00123/02.jpg
+fixtures/fisean-index/stills/b8f4a1c2-vid00123/02.jpg
+    magick -size 480x270 'gradient:#5c5c63-#1a1a1e' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'street · shot 4' -quality 72 fixtures/fisean-index/stills/b8f4a1c2-vid00123/02.jpg
 
 fixtures/media/2006/webclip.flv
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x240:rate=15 -t 2 -c:v flv -q:v 8 fixtures/media/2006/webclip.flv
 
-fixtures/index/stills/c1d9e0f3-webclip/01.jpg
-    magick -size 480x270 'gradient:#3b2f47-#120e1a' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'indoor · shot 2' -quality 72 fixtures/index/stills/c1d9e0f3-webclip/01.jpg
+fixtures/fisean-index/stills/c1d9e0f3-webclip/01.jpg
+    magick -size 480x270 'gradient:#3b2f47-#120e1a' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'indoor · shot 2' -quality 72 fixtures/fisean-index/stills/c1d9e0f3-webclip/01.jpg
 
 fixtures/media/2018/img9981.mov
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v libx264 -pix_fmt yuv420p -movflags +faststart fixtures/media/2018/img9981.mov
 
-fixtures/index/stills/2a7c4b96-img9981/01.jpg
-    magick -size 480x270 'gradient:#141726-#05060b' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 2' -quality 72 fixtures/index/stills/2a7c4b96-img9981/01.jpg
+fixtures/fisean-index/stills/2a7c4b96-img9981/01.jpg
+    magick -size 480x270 'gradient:#141726-#05060b' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 2' -quality 72 fixtures/fisean-index/stills/2a7c4b96-img9981/01.jpg
 
-fixtures/index/stills/2a7c4b96-img9981/02.jpg
-    magick -size 480x270 'gradient:#1b2036-#07080f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 5' -quality 72 fixtures/index/stills/2a7c4b96-img9981/02.jpg
+fixtures/fisean-index/stills/2a7c4b96-img9981/02.jpg
+    magick -size 480x270 'gradient:#1b2036-#07080f' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 5' -quality 72 fixtures/fisean-index/stills/2a7c4b96-img9981/02.jpg
 
-fixtures/index/stills/2a7c4b96-img9981/03.jpg
-    magick -size 480x270 'gradient:#3a2c52-#0b0812' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 8' -quality 72 fixtures/index/stills/2a7c4b96-img9981/03.jpg
+fixtures/fisean-index/stills/2a7c4b96-img9981/03.jpg
+    magick -size 480x270 'gradient:#3a2c52-#0b0812' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'night · shot 8' -quality 72 fixtures/fisean-index/stills/2a7c4b96-img9981/03.jpg
 
 fixtures/media/2009/audio001.mp3
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i sine=frequency=440:duration=3 -c:a libmp3lame -b:a 64k fixtures/media/2009/audio001.mp3
@@ -78,38 +78,38 @@ fixtures/media/2009/audio001.mp3
 fixtures/media/2021/img2210.mp4
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v libx264 -pix_fmt yuv420p -movflags +faststart fixtures/media/2021/img2210.mp4
 
-fixtures/index/stills/9f1b6c73-img2210/01.jpg
-    magick -size 480x270 'gradient:#cfe1ef-#8fa9bd' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'snow · shot 1' -quality 72 fixtures/index/stills/9f1b6c73-img2210/01.jpg
+fixtures/fisean-index/stills/9f1b6c73-img2210/01.jpg
+    magick -size 480x270 'gradient:#cfe1ef-#8fa9bd' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'snow · shot 1' -quality 72 fixtures/fisean-index/stills/9f1b6c73-img2210/01.jpg
 
-fixtures/index/stills/9f1b6c73-img2210/02.jpg
-    magick -size 480x270 'gradient:#e8f0f6-#a8bccd' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'snow · shot 6' -quality 72 fixtures/index/stills/9f1b6c73-img2210/02.jpg
+fixtures/fisean-index/stills/9f1b6c73-img2210/02.jpg
+    magick -size 480x270 'gradient:#e8f0f6-#a8bccd' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'snow · shot 6' -quality 72 fixtures/fisean-index/stills/9f1b6c73-img2210/02.jpg
 
-fixtures/index/stills/9f1b6c73-img2210/03.jpg
-    magick -size 480x270 'gradient:#a9c3d6-#6f8ba1' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'snow · shot 9' -quality 72 fixtures/index/stills/9f1b6c73-img2210/03.jpg
+fixtures/fisean-index/stills/9f1b6c73-img2210/03.jpg
+    magick -size 480x270 'gradient:#a9c3d6-#6f8ba1' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'snow · shot 9' -quality 72 fixtures/fisean-index/stills/9f1b6c73-img2210/03.jpg
 
 fixtures/media/2013/dsc00999.avi
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v mpeg4 -q:v 6 fixtures/media/2013/dsc00999.avi
 
-fixtures/index/stills/4b2e7d18-dsc00999/01.jpg
-    magick -size 480x270 'gradient:#2a2f3d-#0b0d13' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'city · shot 2' -quality 72 fixtures/index/stills/4b2e7d18-dsc00999/01.jpg
+fixtures/fisean-index/stills/4b2e7d18-dsc00999/01.jpg
+    magick -size 480x270 'gradient:#2a2f3d-#0b0d13' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'city · shot 2' -quality 72 fixtures/fisean-index/stills/4b2e7d18-dsc00999/01.jpg
 
 fixtures/media/2019/img5512.mov
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v libx264 -pix_fmt yuv420p -movflags +faststart fixtures/media/2019/img5512.mov
 
-fixtures/index/stills/6c8a3f29-img5512/01.jpg
-    magick -size 480x270 'gradient:#4d4436-#191510' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'museum · 6s' -quality 72 fixtures/index/stills/6c8a3f29-img5512/01.jpg
+fixtures/fisean-index/stills/6c8a3f29-img5512/01.jpg
+    magick -size 480x270 'gradient:#4d4436-#191510' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'museum · 6s' -quality 72 fixtures/fisean-index/stills/6c8a3f29-img5512/01.jpg
 
-fixtures/index/stills/6c8a3f29-img5512/02.jpg
-    magick -size 480x270 'gradient:#5a5041-#1e1a13' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'museum · 11s' -quality 72 fixtures/index/stills/6c8a3f29-img5512/02.jpg
+fixtures/fisean-index/stills/6c8a3f29-img5512/02.jpg
+    magick -size 480x270 'gradient:#5a5041-#1e1a13' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'museum · 11s' -quality 72 fixtures/fisean-index/stills/6c8a3f29-img5512/02.jpg
 
 fixtures/media/2022/img7788.mp4
     ffmpeg -y -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=15 -t 2 -c:v libx264 -pix_fmt yuv420p -movflags +faststart fixtures/media/2022/img7788.mp4
 
-fixtures/index/stills/e0f5b7d4-img7788/01.jpg
-    magick -size 480x270 'gradient:#4f6b3c-#1b2413' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'zoo · shot 1' -quality 72 fixtures/index/stills/e0f5b7d4-img7788/01.jpg
+fixtures/fisean-index/stills/e0f5b7d4-img7788/01.jpg
+    magick -size 480x270 'gradient:#4f6b3c-#1b2413' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'zoo · shot 1' -quality 72 fixtures/fisean-index/stills/e0f5b7d4-img7788/01.jpg
 
-fixtures/index/stills/e0f5b7d4-img7788/02.jpg
-    magick -size 480x270 'gradient:#6d8a4e-#26301a' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'zoo · shot 9' -quality 72 fixtures/index/stills/e0f5b7d4-img7788/02.jpg
+fixtures/fisean-index/stills/e0f5b7d4-img7788/02.jpg
+    magick -size 480x270 'gradient:#6d8a4e-#26301a' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'zoo · shot 9' -quality 72 fixtures/fisean-index/stills/e0f5b7d4-img7788/02.jpg
 
-fixtures/index/stills/e0f5b7d4-img7788/03.jpg
-    magick -size 480x270 'gradient:#8a9c63-#333d22' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'zoo · shot 13' -quality 72 fixtures/index/stills/e0f5b7d4-img7788/03.jpg
+fixtures/fisean-index/stills/e0f5b7d4-img7788/03.jpg
+    magick -size 480x270 'gradient:#8a9c63-#333d22' -gravity southwest -pointsize 17 -fill '#f0ece4' -annotate +14+12 'zoo · shot 13' -quality 72 fixtures/fisean-index/stills/e0f5b7d4-img7788/03.jpg

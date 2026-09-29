@@ -48,6 +48,11 @@ SUPPORTED_INDEX_VERSIONS = {1}
 FIRST_PORT = 8765
 RUNS_ON = "127.0.0.1"
 
+# The directory name `fisean scan` writes by default. Duplicated rather than
+# shared: the two halves are separate programs and either may be run on its own,
+# so neither may import the other.
+INDEX_DIR_NAME = "fisean-index"
+
 # resolve() follows a symlink, which is what lets `~/bin/fisean-browse` point at
 # this file and still find static/ beside the real one.
 HERE = Path(__file__).resolve().parent
@@ -276,8 +281,11 @@ def main() -> int:
         epilog="The index is read-only; the browser never writes to it, and never "
                "decodes media. See docs/index-format.md for the format it expects.",
     )
+    parser.add_argument("directory", nargs="?", default=None,
+                        help="library root or index directory "
+                             f"(default: the committed fixture, fixtures/{INDEX_DIR_NAME})")
     parser.add_argument("--index", default=None,
-                        help="index directory (default: the committed fixture, fixtures/index)")
+                        help="the same as the positional directory, for callers that prefer a flag")
     parser.add_argument("--media-root", default=None,
                         help="override the media root recorded in the manifest")
     parser.add_argument("--port", type=int, default=FIRST_PORT,
@@ -294,13 +302,20 @@ def main() -> int:
             f"expected in {STATIC_DIR}\n")
         return 1
 
-    index_root = Path(args.index).expanduser().resolve() if args.index \
-        else (HERE / "fixtures" / "index")
+    given = args.index or args.directory
+    index_root = Path(given).expanduser().resolve() if given \
+        else (HERE / "fixtures" / INDEX_DIR_NAME)
+    # A library root is accepted as well as an index directory, so the same path
+    # can be handed to both halves: `fisean scan DIR` writes DIR/fisean-index, and
+    # `fisean browse DIR` reads it back without the name being typed twice.
+    if not (index_root / "manifest.json").is_file() \
+            and (index_root / INDEX_DIR_NAME / "manifest.json").is_file():
+        index_root = index_root / INDEX_DIR_NAME
     if not (index_root / "manifest.json").is_file():
         sys.stderr.write(
             f"no index at {index_root}\n"
-            "Build the fixture one with: python3 fixtures/make_fixtures.py\n"
-            "or point at a real index with: --index /path/to/index\n")
+            f"  index a library:  fisean scan {given or 'DIR'}\n"
+            "  or point straight at an index directory with --index\n")
         return 1
 
     media_root = resolve_media_root(index_root, index_root / "manifest.json", args.media_root)

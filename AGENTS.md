@@ -13,17 +13,30 @@ in executable names and paths are a portability tax that buys nothing.
 
 ## Status
 
-The **browser half exists and runs**: `browse.py`, a standard-library Python
-server, and its interface as ordinary files in [`static/`](static) — the page,
-the stylesheet, the script and the icon — that it serves from disk. It is
-developed against the synthetic fixture library in
-[`fixtures/`](fixtures/README.md), so every number on screen describes invented
-footage.
+**Both halves exist and run.** `browse.py` is a standard-library Python server,
+with its interface as ordinary files in [`static/`](static) — the page, the
+stylesheet, the script and the icon — served from disk. `scan.py` is the indexer:
+it walks a directory hierarchy, measures each video with `ffprobe` and `ffmpeg`,
+picks the stills that represent it, and writes an index the browser reads.
 
-**The indexer does not exist.** The requirements, the format and the stack notes
-below are decisions and intentions, not descriptions of working code. The one
-exception is FFmpeg, which is measured rather than assumed — see the candidate
-stack.
+**Content classification and summaries are not written yet.** `scan.py` writes
+`labels: []` and `summary: null`: it measures, it does not yet interpret. So a
+scanned library has nothing in the browser's "who & what" facet, and the browser
+says "nothing here" rather than inventing anything. Filling that in needs the
+detector and the embedding models, which is the next piece of work — see the
+candidate stack below.
+
+Until a real library has been scanned, the browser is still developed against the
+synthetic fixture library in [`fixtures/`](fixtures/README.md), so the numbers on
+screen there describe invented footage.
+
+**What the indexer does and does not do yet.** It measures: container and codec,
+duration, dimensions, frame rate, capture date and GPS where the file carries
+them, scene changes, motion, blur and brightness, and it extracts the stills. It
+does not interpret: `labels` is an empty list and `summary` is null for every
+asset, so anything below about classification, keywords and summaries is still a
+decision rather than a description of working code. The other exception is
+FFmpeg, which is measured rather than assumed — see the candidate stack.
 
 ## What the tool is for
 
@@ -67,8 +80,16 @@ Rules that keep the seam honest:
   Letting indexer internals leak into the browser is exactly what would cost us
   the freedom to swap the backend.
 - Re-indexing one file must not require touching the others.
-- The index and the stills live outside the media directory, which stays usable
-  read-only — it may be on a disk the tool has no business writing to.
+- **The index lives beside the library by default** — `<DIR>/fisean-index` — so one
+  path serves both commands and the index travels with the media it describes.
+  `--index` puts it anywhere, under any name. **Correction (2026-09-29):** this
+  bullet, requirement 5 and docs/index-format.md all said the index and stills
+  must live *outside* the media directory, which stays read-only. That was the
+  first decision and it is reversed: an index that travels with its library is
+  worth more than a pristine media directory, and the media is still never
+  written to. The cost is real, which is why `--index` exists — a library on a
+  read-only disk cannot hold its own index, and the scan says so and names the
+  flag rather than failing obscurely.
 
 ## Requirements
 
@@ -81,10 +102,19 @@ Numbered, as agreed, so that a later change can be checked against them.
 3. Classifies each video and derives keywords, enough to list the library by
    date, keyword, style and content.
 4. Produces a summary of each video's content.
-5. Writes its output outside the media directory, leaving the source files
-   untouched.
-6. Handles a mixed legacy library: `3gp`, `avi`, `dv`, `flv`, `mov`, `mp4`,
-   `mpeg`.
+5. Leaves the source files untouched, and writes its output where it is told:
+   `<DIR>/fisean-index` by default, or `--index` anywhere else. **Correction
+   (2026-09-29):** this requirement used to say "outside the media directory" —
+   see the architecture note above, which records why that was reversed.
+6. Handles a mixed legacy library: `3gp`, `avi`, `dv`, `flv`, `mov`, `mp3`,
+   `mp4`, `mpeg`.
+7. Scans a hierarchy recursively and shows progress as it goes, saying which
+   files it indexed, which it left alone and which it could not read.
+8. Skips files that have not changed since the last scan and re-indexes the ones
+   that have. `--force` re-indexes everything regardless.
+9. Records the duration of each video, which the browser shows on every card.
+10. Survives a file it cannot read: the failure is recorded in the manifest's
+    `errors`, the rest of the scan carries on, and the library stays browsable.
 
 ### Browser
 
@@ -314,6 +344,7 @@ Rules:
 | --- | --- |
 | `fisean.py` | the `fisean` command: one entry point that dispatches to the halves, and implements neither |
 | `browse.py` | the browser half: CLI and HTTP server, nothing else |
+| `scan.py` | the indexer: walks a hierarchy, measures, extracts stills, writes the index |
 | `static/` | its interface — `index.html`, `app.css`, `app.js`, `icon.svg`, `favicon.ico`, served from disk |
 | `install.sh` | symlinks `fisean` into `$BIN` (default `~/bin`) and checks that it runs |
 | `fixtures/` | the synthetic library the browser is developed against — see [fixtures/README.md](fixtures/README.md) |
@@ -374,6 +405,46 @@ honest when it is also a file boundary.
 - **Docs**: https://docs.python.org/3/library/http.server.html ·
   https://docs.python.org/3/library/mimetypes.html
 
+### FFmpeg and ffprobe
+
+- **Role**: the indexer's only external dependency. `ffprobe` supplies technical
+  metadata, tags, capture time and GPS. `ffmpeg` does the two jobs that need
+  pixels: one sampling pass per video to measure scene changes, motion, blur and
+  brightness, and one seek per still extracted.
+- **Version**: 8.1.2 at `/usr/local/bin/ffmpeg` — the GPL build measured in the
+  licence section. Nothing pins it: every filter option used is long-standing.
+- **Best Practices**:
+  - **Run the CLI; never link the libraries.** Shelling out keeps the GPL build at
+    arm's length. Linking `libav*` — PyAV or any other binding — would make this
+    program GPL-3.0-or-later as well, and that is the whole reason this repo is
+    AGPL. This is the most important rule in this section.
+  - **Close stdin; do not pass `-nostdin`.** `ffprobe` rejects that flag as an
+    unknown option and exits non-zero, which presents as "every file in the
+    library is corrupt". `stdin=subprocess.DEVNULL` works for both programs, and
+    also stops a stray keystroke being eaten by ffmpeg from the terminal that
+    started the scan.
+  - **Detect scene changes; never trust keyframe flags.** DV and Motion JPEG are
+    intra-only, so every frame is a keyframe and a keyframe scan returns the whole
+    video. `scdet`'s score is used with a threshold of 10: measured, a hard cut
+    scores about 27 and intra-shot motion stays under about 4.
+  - **Do not use `freezedetect`.** On an animated clip it reported every interval
+    as frozen — with `fps` in front of it, apparently comparing the wrong frames.
+    `scdet`'s `mafd`, a plain mean absolute frame difference, is used instead and
+    behaves as expected. The first frame of every file reports `mafd` 0 for want
+    of a predecessor, so it is excluded from the ratio.
+  - **`avg_frame_rate` is unreliable.** DV reports `60000/1` for a 25fps stream,
+    so a sane `r_frame_rate` wins when the average is absurd — and audio-only
+    streams report `0/0`, which must not be divided.
+  - **Measure at one fixed size.** Frames are scaled to 320px wide before any
+    measurement, so a 3GP file and a 4K file produce comparable numbers. Blur is
+    resolution-dependent, so changing that width invalidates every stored
+    measurement — which is why the values are recorded per asset in its `scan`
+    block, and why changing one re-measures instead of silently skipping.
+  - **Give every call a timeout and `-v error`.** A truncated file can leave
+    ffmpeg reading for ever, and one such file must not stall a library scan.
+- **Docs**: https://ffmpeg.org/ffmpeg-filters.html ·
+  https://ffmpeg.org/ffprobe.html
+
 ## Development Commands
 
 ```sh
@@ -383,12 +454,17 @@ python3 fixtures/make_fixtures.py --check
 ./install.sh                              # symlink fisean into ~/bin
 BIN=/usr/local/bin ./install.sh           # elsewhere; a system path needs sudo
 
+fisean scan DIR                           # index DIR into DIR/fisean-index
+fisean scan DIR --force --jobs 4          # re-index everything, four at a time
+fisean scan DIR --index /tmp/idx          # keep the index somewhere else
+fisean scan DIR --dry-run                 # list what would happen, write nothing
 fisean open DIR                           # serve the index in DIR, open a browser
 fisean browse DIR                         # the same command, second spelling
 fisean browse DIR --port 9000 --no-open
 
-python3 fisean.py browse fixtures/index   # the same thing without installing
-python3 browse.py --index fixtures/index  # the browser half on its own
+python3 fisean.py browse fixtures/fisean-index   # the same, without installing
+python3 scan.py fixtures/media --index /tmp/idx  # the indexer on its own
+python3 browse.py --index fixtures/fisean-index  # the browser half on its own
 
 # Rebuild the favicon from the icon after editing static/icon.svg. `-background
 # none` must come before the input or the transparent corners come out white.
@@ -399,11 +475,14 @@ magick /tmp/i16.png /tmp/i32.png /tmp/i48.png static/favicon.ico
 ```
 
 `DIR` may be the index directory itself (the one holding `manifest.json`) or a
-library root with an `index/` subdirectory; both are accepted, and with no DIR
-the committed fixture is used. Anything after `DIR` is passed straight through.
+library root containing a `fisean-index` subdirectory; both commands accept
+either, so the same path can be handed to `scan` and to `browse`. With no `DIR`,
+`scan` indexes the current directory and the browser opens the committed fixture.
+Anything after `DIR` is passed straight through.
 
-The browser needs nothing but Python. `ffmpeg` and ImageMagick (`magick`) are
-needed only to rebuild the fixtures. An edit to `static/app.css` or
+The browser needs nothing but Python. `scan` needs `ffmpeg` and `ffprobe` on the
+path, and `--index` to put its output somewhere the library itself cannot hold one.
+`magick` is needed only to rebuild the favicon. An edit to `static/app.css` or
 `static/app.js` needs only a page reload: both are read from disk per request,
 and `index.html` always is.
 
@@ -413,7 +492,7 @@ There is no test suite. Two gates must pass, and the second is not optional:
 **`py_compile` cannot see anything under `static/`.**
 
 ```sh
-python3 -m py_compile browse.py fixtures/make_fixtures.py
+python3 -m py_compile browse.py scan.py fixtures/make_fixtures.py fisean.py
 
 node --check static/app.js
 ```
@@ -481,9 +560,9 @@ in that file's own comment syntax — `#` for Python, shell and YAML, `//` or
 
 **Out of scope**: prose (`README.md`, `AGENTS.md`, `docs/`), which is covered by
 `LICENSE` and by the README's own licence section; generated files
-(`fixtures/index/`, `static/favicon.ico`), which are regenerated anyway and whose
-provenance is recorded by the command that rebuilds them; and `LICENSE` itself,
-which *is* the licence.
+(`fixtures/fisean-index/`, `static/favicon.ico`), which are regenerated anyway
+and whose provenance is recorded by the command that rebuilds them; and `LICENSE`
+itself, which *is* the licence.
 
 Two decisions recorded here so they are not silently revisited:
 

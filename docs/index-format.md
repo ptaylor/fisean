@@ -41,20 +41,36 @@ commit that changes them.
 
 ## 2. Where the index lives
 
-Outside the media directory, which the indexer never writes to:
+Beside the library it describes, in a directory named `fisean-index`:
 
 ```
-~/Library/Application Support/videos/<library-name>/
-├── manifest.json
-├── overrides.yaml        # hand-edited; see below
-├── stills/<id>/01.jpg …
-└── videos/<id>.json
+<library>/
+├── 2018/
+│   └── img9981.mov
+└── fisean-index/
+    ├── manifest.json
+    ├── overrides.yaml      # hand-edited; see below
+    ├── stills/<id>/01.jpg …
+    └── videos/<id>.json
 ```
 
-`--out` overrides the location. `overrides.yaml` lives **here, not in the repo**:
+The media itself is never written to; the index directory is a sibling of it.
+`fisean scan <DIR> --index <SOMEWHERE>` puts the index anywhere else, under any
+name — which is what a library on a read-only disk needs, and the scan says so
+rather than failing obscurely when it cannot write. Both commands accept either
+the library root or the index directory, so the same path works for both.
+
+**Correction (2026-09-29):** this section previously specified
+`~/Library/Application Support/videos/<library-name>/`, *outside* the media
+directory, and said `--out` overrode it. That was reversed when the indexer was
+written: an index that travels with its library is worth more than a pristine
+media directory, because it can be moved, copied and backed up as one thing. The
+flag is `--index`, and the media is still never modified.
+
+`overrides.yaml` lives **here, not in the repo**:
 it is a correction list for one person's library, it may name places and people,
 and it is not project source. The label vocabulary is project source and does
-live in the repo (`vocabulary.yaml`).
+live in the repo (`vocabulary.yaml`). Nothing reads `overrides.yaml` yet.
 
 ## 3. `manifest.json`
 
@@ -239,10 +255,15 @@ Recorded, not decided:
 
 - **How many stills per video**, and whether a minimum is enforced for short and
   static clips (a 15-second clip of a birthday cake may warrant one still, not
-  six).
+  six). **What the indexer does meanwhile (2026-09-29):** one still per shot, up to
+  three, spread evenly across the timeline when there are more shots than stills.
+  A single-shot clip therefore gets one still rather than three near-identical
+  ones. `--stills N` changes the ceiling; changing it re-extracts without `--force`.
 - **Still size and format.** Extracted at full resolution as JPEG, or scaled to a
   documented maximum width? At a few thousand videos, full-resolution stills
-  become the single largest thing the tool creates.
+  become the single largest thing the tool creates. **What the indexer does
+  meanwhile:** JPEG, scaled to a maximum width of 1280px, never upscaled.
+  `--still-width N` changes it.
 - **Whether the stills are covered by `overrides.yaml`** — a hand-picked cover
   still per video is very likely to be wanted, and that is a user-owned choice
   the index cannot make.

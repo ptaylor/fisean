@@ -18,6 +18,12 @@ __pycache__/
 # fresh clone without ffmpeg or ImageMagick installed.
 fixtures/media/
 
-# Nothing else yet — the indexer's stack is still being chosen. Add the standard
-# patterns for each language, package manager and build tool here in the same
-# change that introduces it. See AGENTS.md, "Keeping .gitignore current".
+# An index is written beside the library it describes, so `fisean scan` run on
+# this repository would drop one at the root. Only the root: the committed
+# fixture lives in fixtures/fisean-index and must stay tracked.
+/fisean-index/
+
+# The indexer needs nothing else ignored: ffmpeg is run as a program and has no
+# build output, and its model weights are not downloaded yet — when they are,
+# their directory earns a pattern here in the same change. See AGENTS.md,
+# "Keeping .gitignore current".

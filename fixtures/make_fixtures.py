@@ -33,7 +33,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parent
-INDEX_DIR = ROOT / "index"
+# The same directory name the indexer uses by default, so the committed fixture
+# is an example of the convention rather than an exception to it.
+INDEX_DIR = ROOT / "fisean-index"
 MEDIA_DIR = ROOT / "media"
 VOCABULARY = REPO_ROOT / "vocabulary.yaml"
 
