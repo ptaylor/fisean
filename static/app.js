@@ -269,11 +269,13 @@ function renderItems(items) {
 // One video per row. Every still is the same size here, the cover included, so
 // the row reads as a strip of what was extracted rather than a big picture with
 // some small ones beside it. The cover is left at full opacity and the rest are
-// dimmed, which marks it without spending a border on it.
+// dimmed, which marks it without spending a border on it. Three at most: the
+// tiles are what give the row its height, so a fourth would wrap and leave some
+// rows taller than others for nothing the row does not already say.
 function renderRow(asset) {
   const best = cover(asset);
   const bestIndex = best ? asset.stills.indexOf(best) : 0;
-  const shown = (asset.stills || []).slice(0, 6);
+  const shown = (asset.stills || []).slice(0, 3);
 
   const strip = el('div', { class: 'row-stills' });
   if (shown.length) {

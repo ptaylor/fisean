@@ -157,16 +157,22 @@ main { display: flex; align-items: flex-start; }
   background: var(--panel); border: 1px solid var(--line-soft);
   border-radius: var(--radius); cursor: pointer;
   transition: border-color 120ms ease;
+  /* A grid item's automatic minimum size is its min-content width, which in a
+     list row is the stills plus an unbreakable line of facts - wider than the
+     grid, so the row pushed the track out and the page scrolled sideways. This
+     lets the row be the width it is given and the text inside it wrap. */
+  min-width: 0;
 }
 .row:hover { border-color: var(--dimmer); }
 .row[data-selected=true] { border-color: var(--accent); }
-/* Every still in a row is the same size, the cover included: the cover used to be
-   a 208x117 box beside 104x58 thumbnails, which made one still twice the size of
-   its neighbours and the row read as two different things. Three tiles a line, so
-   a row is about the height the big cover used to make it. */
-.row-stills { display: flex; flex-wrap: wrap; gap: 5px; flex: 0 0 322px; width: 322px; }
+/* The stills are the tallest thing in a row, so they *are* the row's height: the
+   tiles set it and the text column sits beside them at whatever height that is.
+   They were 104x58 inside a row 131px tall, which left the picture smaller than
+   the card holding it. Now sized to the old big cover's 208x117, and never more
+   than three, so the strip stays on one line and every row is the same height. */
+.row-stills { display: flex; flex-wrap: nowrap; gap: 6px; flex: 0 0 auto; }
 .row-stills img {
-  width: 104px; height: 58px; object-fit: cover; border-radius: 6px;
+  width: 208px; height: 117px; object-fit: cover; border-radius: 6px;
   opacity: 0.78; border: 1px solid transparent; cursor: pointer;
   transition: opacity 120ms ease, border-color 120ms ease;
 }
@@ -175,7 +181,7 @@ main { display: flex; align-items: flex-start; }
 /* The same box the tiles occupy, so a video with no stills still has something
    where the eye expects the picture rather than a ragged edge. */
 .row-stills .none {
-  width: 104px; height: 58px; border-radius: 6px; background: #0a0c0e;
+  width: 208px; height: 117px; border-radius: 6px; background: #0a0c0e;
   display: flex; align-items: center; justify-content: center; text-align: center;
   color: var(--dimmer); font-size: 11.5px; padding: 4px;
 }
@@ -188,13 +194,21 @@ main { display: flex; align-items: flex-start; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 @media (max-width: 1100px) {
-  .row-stills { flex-basis: 166px; width: 166px; }
-  .row-stills img, .row-stills .none { width: 52px; height: 29px; border-radius: 4px; }
-  .row-stills .none { font-size: 9px; }
+  .row-stills img, .row-stills .none { width: 152px; height: 86px; border-radius: 5px; }
+  .row-stills .none { font-size: 10px; }
 }
 @media (max-width: 780px) {
+  /* Stacked, so the strip no longer sets the row's height and two tiles a line
+     give the picture the width of the panel rather than a thumbnail. */
   .row { flex-wrap: wrap; }
-  .row-stills { flex-basis: 100%; width: 100%; }
+  .row-stills { flex-basis: 100%; width: 100%; flex-wrap: wrap; }
+  .row-stills img, .row-stills .none {
+    flex: 0 1 calc(50% - 3px); width: auto; height: auto; aspect-ratio: 16 / 9;
+    /* min-width: 0 or a replaced element refuses to shrink below its intrinsic
+       width: the images took 480px each and landed one to a line, while the
+       placeholder divs beside them honoured the 50% basis. */
+    min-width: 0;
+  }
 }
 .pill {
   background: rgba(8, 10, 12, 0.72); border-radius: 6px;
@@ -204,7 +218,7 @@ main { display: flex; align-items: flex-start; }
 .card .body { padding: 10px 11px 12px; }
 /* Shared by the card and the row: both show the same metadata line, and scoping
    these to .card is how the row silently fell back to body size. */
-.when { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--dim); }
+.when { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 12.5px; color: var(--dim); }
 .when .approx { color: var(--notice); }
 .name { margin-top: 3px; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
