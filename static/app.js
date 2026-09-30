@@ -417,7 +417,23 @@ function openAsset(id, index = 0) {
   render();
 }
 
+// Playback is stopped on purpose rather than left to the browser. Closing the
+// drawer hides it, and a hidden <video> carries on playing - and carries on
+// asking for ranges - until the next render replaces it: measured in Chromium,
+// closing the drawer mid-playback left it playing. That is the "it still plays
+// for a bit", and the broken pipe the server then logs part way through a range.
+// Dropping the source and calling load() aborts the pending request with it - the
+// browser reports it as net::ERR_ABORTED.
+function stopPlayback() {
+  const video = document.querySelector('#drawer video');
+  if (!video) return;
+  video.pause();
+  video.removeAttribute('src');
+  video.load();          // drops the pending range request too
+}
+
 function closeDrawer() {
+  stopPlayback();
   state.selected = null;
   state.playing = false;
   document.getElementById('drawer').hidden = true;
@@ -430,6 +446,10 @@ function renderDrawer() {
   const asset = state.assets.find(a => a.id === state.selected);
   const drawer = document.getElementById('drawer');
   if (!asset) { closeDrawer(); return; }
+  // Whatever was playing is about to be replaced by what this call builds, so it
+  // is stopped first: switching to a still should silence the video, not leave it
+  // playing behind the picture.
+  stopPlayback();
   const stills = asset.stills || [];
   const current = stills[Math.min(state.still, stills.length - 1)];
   const path = mediaPath(asset);

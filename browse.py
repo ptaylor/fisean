@@ -93,16 +93,42 @@ def build_handler(index_root: Path, media_root: Path, static_dir: Path):
     class FiseanHandler(BaseHTTPRequestHandler):
         server_version = "fisean-browse"
 
-        def log_message(self, fmt, *args):  # quieter, and less useful default noise
-            if "/index/videos/" in (self.path or "") and args and str(args[1]).startswith("2"):
+        def log_message(self, fmt, *args):
+            """One line per request, except the ones that are only noise.
+
+            A page load fetches a record per asset and a still per asset, and
+            playing a video fetches a range per seek: hundreds of lines, none of
+            which says anything a reader wants. Failures always get through - a
+            404 or a 416 is exactly what someone reading this log is looking for.
+            """
+            path = self.path or ""
+            status = str(args[1]) if len(args) > 1 else ""
+            quiet = ("/index/videos/", "/index/stills/", "/index/proxies/", "/media/")
+            if status.startswith("2") and path.startswith(quiet):
                 return
             sys.stderr.write(f"fisean browse: {self.address_string()} {fmt % args}\n")
 
         def do_GET(self) -> None:
-            self.serve(include_body=True)
+            self.safely(include_body=True)
 
         def do_HEAD(self) -> None:
-            self.serve(include_body=False)
+            self.safely(include_body=False)
+
+        def safely(self, include_body: bool) -> None:
+            """Serve one request, and let a client that has gone away go.
+
+            A browser aborts media requests constantly: every seek, every time a
+            video is closed, and once more when the page - or the panel holding
+            it - is closed. Each arrives here as a broken pipe part way through a
+            range, which is the client's decision and not a fault in this server,
+            so it is not a traceback: the connection is dropped and the next
+            request is served normally. Closing the panel mid-playback used to
+            print a screenful of these.
+            """
+            try:
+                self.serve(include_body)
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                self.close_connection = True
 
         def serve(self, include_body: bool) -> None:
             path = urlparse(self.path).path
