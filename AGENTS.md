@@ -213,6 +213,22 @@ FFmpeg 8.1.2, not assumed:
 | `mp4` | `mp4`, plus `m4v`, `ipod`, `psp` variants | |
 | `mpeg` | `mpeg` (MPEG-1 Systems / program stream), plus `mpegts`, `vcd`, `svcd`, `vob` | MPEG-2 PS is what `vob`, `dvd` and `svcd` are |
 
+**What a browser plays, measured 2026-09-30.** Of the ten container/codec pairs
+in the real library, Chromium played exactly one: H.264 in MP4. It refused mjpeg
+in avi and mov (281 files), MPEG-4 Part 2 (80), H.263 (6), DV (5) and MPEG-2 (1)
+for want of a *codec*, and refused H.264 inside an **FLV** (1 file) for want of a
+*container* — a sample muxed by hand proved that one. `canPlayType()` is not a
+reliable guide: it answered "no" for H.264 in quicktime, which played, and
+"maybe" for H.263 in 3gp, which did not. Only loading real files settles it.
+
+`scan --proxy` therefore writes an H.264/MP4 copy for every video a browser
+cannot play, and only for video — an mp3 is left alone, since there is no picture
+to copy and a browser plays it as it is. `--proxy-seconds` caps the copy at a
+minute by default: measured over that library the cap saved 57% of the space and
+the same share of the time, because ten long files held half the unplayable
+footage. At the measured 8–24× realtime, the whole library is 15–20 minutes of
+encoding and about 1.15 GB.
+
 Two traps to know before writing any of this:
 
 - **"Extract keyframes" degenerates on DV and Motion JPEG.** Both are intra-only,
@@ -475,6 +491,8 @@ BIN=/usr/local/bin ./install.sh           # elsewhere; a system path needs sudo
 
 fisean scan DIR                           # index DIR into DIR/fisean-index
 fisean scan DIR --force --jobs 4          # re-index everything, four at a time
+fisean scan DIR --proxy                   # also write MP4 copies a browser can play
+fisean scan DIR --proxy --proxy-seconds 0 # copies of the whole video, not a minute
 fisean scan DIR --index /tmp/idx          # keep the index somewhere else
 fisean scan DIR --dry-run                 # list what would happen, write nothing
 fisean open DIR                           # serve the index in DIR, open a browser

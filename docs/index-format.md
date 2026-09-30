@@ -173,6 +173,36 @@ is re-encoded, which is worse.
 Legacy `3gp`, `dv`, `flv` and `avi` files usually carry no capture date at all,
 which is why this field exists rather than a bare timestamp.
 
+### `playback`
+
+Optional, and absent when a browser can play the source as it stands. Otherwise it
+is a copy the scan wrote, inside the index:
+
+```jsonc
+"playback": {
+  "path": "proxies/3f9a1c07-dsc01234.mp4",  // relative to the index directory
+  "seconds": 60.0,                          // length of the copy; 0 was all of it
+  "height": 480,                            // a maximum, never upscaled
+  "crf": 23,                                // quality the copy was made at
+  "codec": "h264",
+  "bytes": 12984320,
+  "source_mtime_ns": 1472303766000000000,   // what this copy was made from
+  "source_size_bytes": 8849624
+}
+```
+
+`path` is served the way stills are — from the index directory, at
+`/index/proxies/<id>.mp4` — so the browser needs no new route and the media
+directory stays read-only. A browser plays a copy in preference to the source
+whenever a record carries one.
+
+The two source fields make the copy a cache: it is rebuilt when the source
+changed, when the copy's own settings changed, or under `--force`, and otherwise
+costs nothing. **Copies are deliberately not part of the settings fingerprint** —
+they are made by `scan --proxy`, and putting them in the fingerprint would mean
+switching that on marked every record stale and re-measured the whole library
+before encoding anything.
+
 ### `captured.gps`
 
 `null` when the file carries no position. A position is stored only when the tag

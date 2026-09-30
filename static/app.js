@@ -118,6 +118,10 @@ const cover = a => {
 const stillURL = rel => `/index/${rel.split('/').map(encodeURIComponent).join('/')}`;
 
 const playable = a => {
+  // A record with a playable copy is playable whatever the original was: the
+  // scan writes one for the formats a browser refuses, and then this is the only
+  // question. Without it the interface would show the copy and offer no player.
+  if (a.playback && a.playback.path) return true;
   const t = a.technical || {};
   if (!t.has_video) return false;
   return PLAYABLE_CONTAINERS.has(String(t.container || '').toLowerCase())
@@ -559,7 +563,15 @@ function renderDrawer() {
   return drawer.replaceChildren(head, body);
 }
 
-const mediaURL = asset => `/media/${String(asset.source?.path || '').split('/').map(encodeURIComponent).join('/')}`;
+// The copy is served out of the index, the way stills are; the original comes
+// from the media root, which is the one place the browser half reads the library
+// itself. A record carries a copy only when the browser cannot play the source.
+const mediaURL = asset => {
+  const copy = asset.playback && asset.playback.path;
+  const path = copy || String(asset.source?.path || '');
+  const base = copy ? '/index/' : '/media/';
+  return base + path.split('/').map(encodeURIComponent).join('/');
+};
 
 function toggle(axisKey, value) {
   const chosen = state.filters.get(axisKey) || new Set();

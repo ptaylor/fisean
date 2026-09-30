@@ -85,6 +85,28 @@ STILL_RULE_VERSION = 1
 # second after the previous choice does not produce a duplicate.
 STILL_MIN_GAP_S = 0.5
 
+# Playable copies. A browser decodes H.264 in MP4 and almost nothing else of what
+# a legacy library holds: measured against a real one, Chromium refused mjpeg,
+# MPEG-4 Part 2, H.263, DV and MPEG-2, and refused H.264 itself inside an FLV
+# container. A copy is cut short by default - a minute shows what a video is, and
+# ten long files held half of that library's unplayable footage - and is never
+# upscaled. Quality is set by CRF rather than a bitrate, because these sources
+# are already lossy and re-encoding twice at a fixed bitrate wastes more than it
+# saves.
+PROXY_HEIGHT = 480
+PROXY_SECONDS = 60.0
+PROXY_CRF = 23
+PROXY_PRESET = "veryfast"
+PROXY_AUDIO_KBPS = 64
+
+# What a browser can play. These mirror the lists in the browser half, which is
+# deliberate rather than duplicative: the indexer decides what is worth copying,
+# the browser decides what it will play, and because the browser prefers a copy
+# whenever a record has one, the two disagreeing costs a wasted copy rather than
+# a page that will not play.
+PLAYABLE_CONTAINERS = ("mp4", "mov", "m4v", "webm")
+PLAYABLE_CODECS = ("h264", "hevc", "vp8", "vp9", "av1")
+
 # Everything is measured on frames scaled to this width, so the numbers are
 # comparable between a 3GP file and a 4K one. A video narrower than this is
 # upscaled, which inflates its blur slightly; recorded rather than corrected.
@@ -717,6 +739,102 @@ def extract_still(path: Path, at_s: float, target: Path, width: int,
     return None
 
 
+# ---------------------------------------------------------------- playable copies
+
+
+def playable(technical: dict) -> bool:
+    """Whether a browser plays this file as it stands, with no copy needed."""
+    if not technical.get("has_video"):
+        return False
+    container = str(technical.get("container") or "").lower()
+    codec = str(technical.get("video_codec") or "").lower()
+    return container in PLAYABLE_CONTAINERS and codec in PLAYABLE_CODECS
+
+
+def make_proxy(source: Path, target: Path, seconds: float, height: int,
+               timeout: float) -> str | None:
+    """A playable copy of one file. Returns an error message, or None on success.
+
+    H.264 in MP4 because that is what every browser plays, including the one this
+    was measured in. Two options do the work beyond the encoder: the length cap,
+    which is where most of the space and time is saved, and the height, which
+    never upscales - `min()`, the same way the stills are sized. The scale leaves
+    the sample aspect ratio alone, so anamorphic DV and 3GP still display at the
+    right shape.
+
+    `+faststart` puts the index at the front of the file, so playback starts on
+    the first range request instead of after the whole thing has been fetched.
+    The copy is written to a temporary and renamed, as records and stills are: an
+    interrupted scan must not leave a half-playable MP4 where a record points.
+    """
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + ".tmp.mp4")
+    command = ["ffmpeg", "-v", "error", "-i", str(source)]
+    if seconds and seconds > 0:
+        command += ["-t", f"{seconds:.3f}"]
+    if height and height > 0:
+        command += ["-vf", f"scale=-2:'min({height},ih)'"]
+    command += ["-c:v", "libx264", "-crf", str(PROXY_CRF), "-preset", PROXY_PRESET,
+                "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                "-c:a", "aac", "-b:a", f"{PROXY_AUDIO_KBPS}k",
+                "-y", str(temporary)]
+    code, _, err = run(command, timeout)
+    if code != 0 or not temporary.is_file() or temporary.stat().st_size == 0:
+        temporary.unlink(missing_ok=True)
+        return tidy_error(err, source) or f"ffmpeg exited {code} writing a copy"
+    os.replace(temporary, target)
+    return None
+
+
+def ensure_proxy(path: Path, name: str, record: dict, index_dir: Path, args
+                 ) -> tuple[dict | None, str, str | None]:
+    """Make the playable copy this file wants, if any.
+
+    Returns the record to write, a note for the progress line, and an error. A
+    copy is wanted only for a video a browser cannot play; audio-only files are
+    left alone, since there is no video to copy and an mp3 plays as it is.
+
+    A copy that already exists and is current is left alone too, which is what
+    makes this a cache: it is rebuilt when the source changed, when the copy
+    settings changed, or under --force, and otherwise costs nothing. It is
+    deliberately absent from the settings fingerprint - putting it there would
+    mean that switching --proxy on marked every record stale and re-measured the
+    whole library before encoding anything.
+    """
+    if not args.proxy:
+        return None, "", None
+    technical = record.get("technical") or {}
+    if playable(technical) or not technical.get("has_video"):
+        return None, "", None
+
+    target = index_dir / "proxies" / f"{name}.mp4"
+    source = record.get("source") or {}
+    said = record.get("playback") or {}
+    same_source = (said.get("source_mtime_ns"), said.get("source_size_bytes")) == (
+        source.get("mtime_ns"), source.get("size_bytes"))
+    same_settings = (said.get("seconds"), said.get("height"), said.get("crf")) == (
+        args.proxy_seconds, args.proxy_height, PROXY_CRF)
+    if not args.force and same_source and same_settings and target.is_file():
+        return None, "", None
+
+    error = make_proxy(path, target, args.proxy_seconds, args.proxy_height, args.timeout)
+    if error:
+        return None, "", error
+    written = target.stat().st_size
+    updated = dict(record)
+    updated["playback"] = {
+        "path": f"proxies/{name}.mp4",
+        "seconds": args.proxy_seconds,
+        "height": args.proxy_height,
+        "crf": PROXY_CRF,
+        "codec": "h264",
+        "bytes": written,
+        "source_mtime_ns": source.get("mtime_ns"),
+        "source_size_bytes": source.get("size_bytes"),
+    }
+    return updated, f"copy {human_bytes(written)}", None
+
+
 # ---------------------------------------------------------------- still choice
 
 
@@ -1142,6 +1260,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--still-width", type=int, default=STILL_WIDTH,
                         help=f"maximum still width in pixels (default: {STILL_WIDTH})")
     parser.add_argument("--no-stills", action="store_true", help="measure only, extract no stills")
+    parser.add_argument("--proxy", action="store_true",
+                        help="also write an MP4 copy a browser can play, for videos it cannot")
+    parser.add_argument("--proxy-seconds", type=float, default=PROXY_SECONDS,
+                        help="seconds of video to copy (default: %(default)s; 0 for all of it)")
+    parser.add_argument("--proxy-height", type=int, default=PROXY_HEIGHT,
+                        help=f"maximum copy height in pixels, never upscaled "
+                             f"(default: {PROXY_HEIGHT})")
     parser.add_argument("--sample-fps", type=float, default=None,
                         help="frames per second to sample for analysis (default: about "
                              f"{SAMPLE_TARGET} frames across the video)")
@@ -1187,6 +1312,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             (index_dir / "videos").mkdir(parents=True, exist_ok=True)
             (index_dir / "stills").mkdir(parents=True, exist_ok=True)
+            if args.proxy:
+                (index_dir / "proxies").mkdir(parents=True, exist_ok=True)
         except OSError as exc:
             sys.stderr.write(
                 f"cannot create the index in {index_dir}: {exc}\n"
@@ -1266,26 +1393,46 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     started = time.monotonic()
-    indexed = skipped = failed = 0
+    indexed = skipped = failed = copies = 0
     stills_written = 0
     errors: list[dict] = []
     warnings: list[str] = []
 
-    def handle(path: Path) -> tuple[str, dict | None, tuple[str, str] | None, list[dict], float]:
+    def handle(path: Path) -> tuple[str, dict | None, tuple[str, str] | None, list[dict], float, str]:
         relative = path.relative_to(root).as_posix()
         name = asset_id(relative, path.stem)
         record, error, problems = scan_one(path, root, index_dir, records.get(name), args)
         if record is None and error is None:
-            return "skipped", None, None, [], 0.0
+            # Unchanged - but its playable copy may still be missing or stale,
+            # which the measurement being current says nothing about.
+            existing = records.get(name)
+            if existing is not None:
+                updated, note, proxy_error = ensure_proxy(path, name, existing, index_dir, args)
+                if proxy_error:
+                    return "proxied", None, None, [{"stage": "proxy", "message": proxy_error}], 0.0, ""
+                if updated is not None:
+                    return "proxied", updated, None, [], 0.0, note
+            return "skipped", None, None, [], 0.0, ""
         seconds = float((record or {}).get("scan", {}).get("seconds") or 0.0)
-        return ("indexed" if record else "failed"), record, error, problems, seconds
+        if record is None:
+            return "failed", None, error, problems, seconds, ""
+        updated, note, proxy_error = ensure_proxy(path, name, record, index_dir, args)
+        if proxy_error:
+            problems = [*problems, {"stage": "proxy", "message": proxy_error}]
+        return "indexed", (updated or record), error, problems, seconds, note
 
     def report(index: int, outcome: str, record: dict | None, error: tuple[str, str] | None,
-               relative: str, problems: list[dict], elapsed: float) -> None:
-        nonlocal indexed, skipped, failed, stills_written
+               relative: str, problems: list[dict], elapsed: float, note: str = "") -> None:
+        nonlocal indexed, skipped, failed, copies, stills_written
         if outcome == "skipped":
             skipped += 1
             reporter.skipped(index, len(files), relative, "unchanged, not re-scanned")
+            return
+        if outcome == "proxied":
+            copies += 1
+            for problem in problems:
+                errors.append({"path": relative, **problem})
+            reporter.skipped(index, len(files), relative, note or "playable copy made")
             return
         if outcome == "failed":
             failed += 1
@@ -1297,6 +1444,8 @@ def main(argv: list[str] | None = None) -> int:
         assert record is not None
         for problem in problems:
             errors.append({"path": relative, **problem})
+        if note:
+            copies += 1
         still_count = len(record["stills"])
         stills_written += still_count
         technical = record["technical"]
@@ -1311,6 +1460,8 @@ def main(argv: list[str] | None = None) -> int:
         detail = (f"{colour.dim((technical.get('video_codec') or '--').ljust(10))} "
                   f"{shape:>9}  {human_duration(technical.get('duration_s')):>7}  "
                   f"{stills_text:<9} {colour.dim(f'{human_duration(elapsed):>7}')}")
+        if note:
+            detail += "  " + colour.dim(note)
         reporter.done(index, len(files), relative, detail)
 
     def write_record_or_report(relative: str, record: dict) -> None:
@@ -1344,8 +1495,8 @@ def main(argv: list[str] | None = None) -> int:
             for done, future in enumerate(as_completed(pending), start=1):
                 path = pending.pop(future)
                 relative = path.relative_to(root).as_posix()
-                outcome, record, error, problems, seconds = future.result()
-                report(done, outcome, record, error, relative, problems, seconds)
+                outcome, record, error, problems, seconds, note = future.result()
+                report(done, outcome, record, error, relative, problems, seconds, note)
                 if record is not None:
                     write_record_or_report(relative, record)
         except BaseException:
@@ -1361,8 +1512,8 @@ def main(argv: list[str] | None = None) -> int:
         for index, path in enumerate(files, start=1):
             relative = path.relative_to(root).as_posix()
             reporter.working(index, len(files), relative)
-            outcome, record, error, problems, seconds = handle(path)
-            report(index, outcome, record, error, relative, problems, seconds)
+            outcome, record, error, problems, seconds, note = handle(path)
+            report(index, outcome, record, error, relative, problems, seconds, note)
             if record is not None:
                 write_record_or_report(relative, record)
 
@@ -1376,6 +1527,9 @@ def main(argv: list[str] | None = None) -> int:
                 still_path = index_dir / still.get("path", "")
                 if still_path.is_file():
                     still_path.unlink()
+            copy = (record.get("playback") or {}).get("path")
+            if copy:
+                (index_dir / copy).unlink(missing_ok=True)
             still_dir = index_dir / "stills" / name
             if still_dir.is_dir():
                 try:
@@ -1416,6 +1570,7 @@ def main(argv: list[str] | None = None) -> int:
         (f"skipped {skipped}", "dim" if skipped else "dim"),
         (f"failed {failed}", "red" if failed else "dim"),
         (f"{stills_written} stills", "cyan" if stills_written else "dim"),
+        *([(f"{copies} copies", "cyan" if copies else "dim")] if args.proxy else []),
         (f"{human_duration(elapsed)}", "dim"),
     ])
     if not args.quiet:
