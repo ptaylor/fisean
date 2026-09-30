@@ -853,6 +853,30 @@ def settings_fingerprint(args) -> dict:
     }
 
 
+def settings_drift(records: dict, args) -> tuple[int, dict[str, tuple[object, object]]]:
+    """How many indexed records were measured under different settings, and how.
+
+    A record is skipped only when the file has not changed *and* the settings that
+    produced it are the same, so a re-tuned threshold - or a new SCAN_VERSION -
+    makes every record stale at once and the next scan measures the whole library
+    again. From outside that is a scan that takes three times as long for no
+    visible reason, so the run says what changed before it starts.
+    """
+    wanted = settings_fingerprint(args)
+    drift: dict[str, tuple[object, object]] = {}
+    stale = 0
+    for record in records.values():
+        written = record.get("scan") or {}
+        differences = [(key, written.get(key), value) for key, value in wanted.items()
+                       if written.get(key) != value]
+        if not differences:
+            continue
+        stale += 1
+        for key, old, new in differences:
+            drift.setdefault(key, (old, new))
+    return stale, drift
+
+
 def scan_one(path: Path, root: Path, index_dir: Path, existing: dict | None,
              args) -> tuple[dict | None, tuple[str, str] | None, list[dict]]:
     """Index one file. Returns (record, (stage, message), warnings).
@@ -1209,12 +1233,26 @@ def main(argv: list[str] | None = None) -> int:
                       colour.dim(" ".join(f"{k} {v}" for k, v in sorted(counts.items())))),
             ("rules", f"one pass at {ANALYSIS_WIDTH}px, {args.stills} stills per video max, "
                       f"{args.still_width}px wide"),
+            # Printed whether or not it has changed: a version is what makes a
+            # record stale, so it belongs on screen before the work starts, not
+            # only when it differs from the last run.
+            ("scan", f"version {SCAN_VERSION}, index format {INDEX_VERSION}"),
         ])
 
     if unreadable:
         shown = ", ".join(unreadable[:3]) + (" …" if len(unreadable) > 3 else "")
         reporter.warn(f"{len(unreadable)} record(s) in the index could not be read "
                       f"({shown}); indexing them again")
+
+    drifted, drift = settings_drift(records, args)
+    if drifted:
+        changed = ", ".join(
+            f"{key} {'none' if old is None else old} → {new}"
+            for key, (old, new) in sorted(drift.items())[:3])
+        if len(drift) > 3:
+            changed += f", and {len(drift) - 3} more"
+        reporter.warn(f"{drifted} of {len(records)} records were written under different "
+                      f"settings ({changed}); they are measured again, not skipped")
 
     if args.dry_run:
         for index, path in enumerate(files, start=1):
