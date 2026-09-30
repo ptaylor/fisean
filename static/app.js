@@ -603,6 +603,33 @@ function closeDrawer() {
   render();
 }
 
+// The play control is the one button in the interface that is a picture rather
+// than a word. The triangle is drawn rather than typed: "▶" is rendered by
+// whichever font happens to claim the character, at a size and on a baseline that
+// font chooses, which is how a glyph ends up sitting off-centre in a round button.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function playGlyph(playing) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  // The button carries the label, so the drawing is not read out as well.
+  svg.setAttribute('aria-hidden', 'true');
+  const shape = document.createElementNS(SVG_NS, playing ? 'rect' : 'polygon');
+  if (playing) {
+    shape.setAttribute('x', '7');
+    shape.setAttribute('y', '7');
+    shape.setAttribute('width', '10');
+    shape.setAttribute('height', '10');
+    shape.setAttribute('rx', '1.5');
+  } else {
+    // Right of centre on purpose: a shape whose mass is on the left reads as
+    // off-centre when it is geometrically central.
+    shape.setAttribute('points', '8,5 19,12 8,19');
+  }
+  svg.append(shape);
+  return svg;
+}
+
 function renderDrawer() {
   const asset = state.assets.find(a => a.id === state.selected);
   const drawer = document.getElementById('drawer');
@@ -656,10 +683,15 @@ function renderDrawer() {
   const actions = el('div', { class: 'actions' });
   actions.append(el('button', { class: 'primary', text: 'Copy full path', onclick: () => copyPath(asset) }));
   if (playable(asset)) {
+    const playing = state.playing;
     actions.append(el('button', {
-      text: state.playing ? 'Show still' : 'Play here',
-      onclick: () => { state.playing = !state.playing; renderDrawer(); },
-    }));
+      class: 'play',
+      // The words the button used to carry are here instead, so the control is
+      // still named for anyone who cannot see the triangle.
+      'aria-label': playing ? 'Stop and show the still' : 'Play here',
+      title: playing ? 'Stop and show the still' : 'Play here',
+      onclick: () => { state.playing = !playing; renderDrawer(); },
+    }, playGlyph(playing)));
   }
   body.append(actions);
   if (asset.technical?.has_video && !playable(asset)) {
