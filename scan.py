@@ -39,7 +39,7 @@ import shutil
 import subprocess
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -256,6 +256,23 @@ def colour_wanted(stream) -> bool:
 # ---------------------------------------------------------------- helpers
 
 
+# Child processes alive right now, and whether a stop has been asked for. An
+# interrupt is delivered to the main thread, which cannot reach into the worker
+# threads that own these children, so knowing what is running is how it gets
+# stopped - and refusing to start more is how stopping stays prompt, because a
+# worker whose child was killed would otherwise begin the next one.
+LIVE: set[subprocess.Popen] = set()
+STOPPING = False
+
+
+class Stopped(BaseException):
+    """A worker's way out once a ^C has stopped the scan.
+
+    BaseException, like KeyboardInterrupt, so that no `except Exception` on the way
+    out swallows it and leaves a half-measured record to be written.
+    """
+
+
 def run(args: list[str], timeout: float | None = None) -> tuple[int, str, str]:
     """Run a program, capturing both streams. Never raises on a non-zero exit.
 
@@ -267,17 +284,53 @@ def run(args: list[str], timeout: float | None = None) -> tuple[int, str, str]:
     an unknown option, and closing the pipe is the mechanism that works for both
     programs - which also means a stray keystroke cannot be eaten by ffmpeg while
     the user is typing in the terminal that started the scan.
+
+    Popen rather than subprocess.run, for one reason: the child has to be visible
+    while it runs so that ^C can stop it. subprocess.run keeps the handle to
+    itself, which would make the 15-minute per-call timeout the length of time an
+    interrupted scan took to notice it had been interrupted.
     """
+    if STOPPING:
+        raise Stopped("interrupted")
     try:
-        done = subprocess.run(args, capture_output=True, text=False,
-                              stdin=subprocess.DEVNULL, timeout=timeout)
-    except subprocess.TimeoutExpired:
-        return 124, "", f"gave up after {timeout:.0f}s"
+        process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except OSError as exc:
         return 1, "", str(exc)
-    return (done.returncode,
-            done.stdout.decode("utf-8", "replace").strip(),
-            done.stderr.decode("utf-8", "replace").strip())
+    with process:
+        LIVE.add(process)
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate()
+            LIVE.discard(process)
+            return 124, "", f"gave up after {timeout:.0f}s"
+        else:
+            LIVE.discard(process)
+    return (process.returncode,
+            stdout.decode("utf-8", "replace").strip(),
+            stderr.decode("utf-8", "replace").strip())
+
+
+def stop_children(grace: float = 2.0) -> None:
+    """Stop the children, and stop the workers asking for more.
+
+    Called from the interrupt handler with work still in flight: the flag turns
+    away a child a worker was about to start, and the loop keeps killing until
+    nothing is left or the grace runs out, so a child spawned in the moment
+    between the signal and the flag cannot be left behind.
+    """
+    global STOPPING
+    STOPPING = True
+    deadline = time.monotonic() + grace
+    while LIVE and time.monotonic() < deadline:
+        for process in list(LIVE):
+            try:
+                process.kill()
+            except OSError:
+                pass
+        time.sleep(0.05)
 
 
 def first_line(text: str) -> str:
@@ -624,15 +677,24 @@ def analyse(path: Path, duration: float | None, native_fps: float | None,
 def extract_still(path: Path, at_s: float, target: Path, width: int,
                   timeout: float) -> str | None:
     """One frame, seeked before the input so a long video is not decoded from the
-    start for every still. Returns an error message, or None on success."""
+    start for every still. Returns an error message, or None on success.
+
+    Written beside the target and renamed into place, like the records are, so an
+    interrupted scan cannot leave a truncated JPEG at a path a record from an
+    earlier scan already points at. The temporary keeps a .jpg extension because
+    ffmpeg chooses its muxer from the filename.
+    """
     target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + ".tmp.jpg")
     code, _, err = run([
         "ffmpeg", "-v", "error", "-ss", f"{at_s:.3f}", "-i", str(path),
         "-frames:v", "1", "-vf", f"scale='min({width},iw)':-2",
-        "-q:v", str(STILL_JPEG_Q), "-y", str(target),
+        "-q:v", str(STILL_JPEG_Q), "-y", str(temporary),
     ], timeout)
-    if code != 0 or not target.is_file() or target.stat().st_size == 0:
+    if code != 0 or not temporary.is_file() or temporary.stat().st_size == 0:
+        temporary.unlink(missing_ok=True)
         return tidy_error(err, path) or f"ffmpeg exited {code} extracting a still"
+    os.replace(temporary, target)
     return None
 
 
@@ -1208,14 +1270,36 @@ def main(argv: list[str] | None = None) -> int:
             reporter.warn(f"{relative}: {problem}")
 
     if args.jobs > 1:
-        with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-            results = list(pool.map(handle, files))
-        for index, (path, result) in enumerate(zip(files, results), start=1):
-            outcome, record, error, problems, seconds = result
-            relative = path.relative_to(root).as_posix()
-            report(index, outcome, record, error, relative, problems, seconds)
-            if record is not None:
-                write_record_or_report(relative, record)
+        # Reported and written as each file finishes, rather than after every one
+        # of them: pool.map returns nothing at all until the last file is done, so
+        # a 537-file library left the terminal silent - with only the header on
+        # screen - for as long as the scan took, which reads as a hung scan. The
+        # lines come in completion order, which is what --jobs buys and what make
+        # -j prints; each record is still written once, and atomically, so the
+        # order they land in does not matter.
+        #
+        # The pool is not a context manager: its __exit__ waits for the queue, and
+        # every file is submitted up front, so an interrupt would have finished
+        # the whole library before the run noticed.
+        pool = ThreadPoolExecutor(max_workers=args.jobs)
+        try:
+            pending = {pool.submit(handle, path): path for path in files}
+            for done, future in enumerate(as_completed(pending), start=1):
+                path = pending.pop(future)
+                relative = path.relative_to(root).as_posix()
+                outcome, record, error, problems, seconds = future.result()
+                report(done, outcome, record, error, relative, problems, seconds)
+                if record is not None:
+                    write_record_or_report(relative, record)
+        except BaseException:
+            # ^C: drop everything not started and leave now. What has already been
+            # written stays, and stays valid - a record is renamed into place only
+            # when it is complete - so the index is browsable and a re-run of the
+            # same command finishes the rest.
+            pool.shutdown(wait=False, cancel_futures=True)
+            raise
+        else:
+            pool.shutdown(wait=True)
     else:
         for index, path in enumerate(files, start=1):
             relative = path.relative_to(root).as_posix()
@@ -1286,4 +1370,15 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        # ^C is how a scan gets stopped, not a fault, so it gets a sentence rather
+        # than a traceback. The children are stopped first, or the run would sit
+        # waiting for a file nobody is interested in any more - the per-call
+        # timeout is 15 minutes, which is how long that wait could be.
+        stop_children()
+        print("\nscan interrupted: the records already written are kept, so "
+              "re-running the same command finishes the rest",
+              file=sys.stderr, flush=True)
+        sys.exit(130)
