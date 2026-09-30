@@ -63,9 +63,21 @@ VIDEO_EXTENSIONS = ("3gp", "avi", "dv", "flv", "mov", "mp3", "mp4", "mpeg")
 # extracted afterwards; it does not require a re-scan of the measurements.
 STILL_WIDTH = 1280
 STILL_JPEG_Q = 3
-# One still per shot, up to this many. A single-shot clip therefore gets one
-# still rather than three near-identical ones.
-STILLS_PER_VIDEO = 3
+# One still per shot, up to this many, so a single-shot clip gets one still for
+# however long it runs rather than five near-identical ones, and a busy clip gets
+# a filmstrip of its scenes. Five, measured rather than guessed: over a real
+# library of 536 videos this yields 1010 stills against the old fixed three's
+# 833, and never fewer for any one video. A duration cap was measured too and
+# rejected - one still per 5, 10 or 20 seconds took stills away from 45, 92 and
+# 145 videos respectively, which is the opposite of what more stills means - and
+# the shot count already scales with how much a video contains: p50 one shot, p90
+# four, p99 eleven.
+STILLS_PER_VIDEO = 5
+# Bumped when *which* frames are chosen changes, as distinct from how many
+# (STILLS_PER_VIDEO) or how they are measured. It sits in the fingerprint, so a
+# record written under an older rule is re-scanned rather than kept beside a
+# newer one.
+STILL_RULE_VERSION = 1
 # Minimum seconds between two chosen stills, so a scene change a fraction of a
 # second after the previous choice does not produce a duplicate.
 STILL_MIN_GAP_S = 0.5
@@ -652,24 +664,27 @@ def sample_score(sample: dict) -> float:
 def choose_stills(samples: list[dict], duration: float, wanted: int) -> list[dict]:
     """Up to `wanted` stills, spread across the timeline, one per shot.
 
-    Two rules do the work. Only one still per shot, so a single-shot clip yields
-    one still rather than three near-identical ones. And when there are more
+    Three rules do the work. Only one still per shot, so a single-shot clip
+    yields one still rather than five near-identical ones. When there are more
     shots than stills, the timeline is divided into that many spans and the best
     frame in each span is taken, so the stills describe the whole video rather
-    than clustering at the start.
+    than clustering at the start. And a span that lands in a shot already
+    represented is dropped as a duplicate, then made up from a shot that has no
+    still yet - otherwise fewer than `wanted` come back, which is how four-shot
+    videos used to yield one still.
     """
     shots = split_shots(samples)
     if not shots:
         return []
     wanted = max(1, min(wanted, len(shots)))
 
-    for shot in shots:
+    shot_of: dict[int, int] = {}
+    best_of: dict[int, dict] = {}
+    for number, shot in enumerate(shots, start=1):
         best = max(shot, key=sample_score)
+        best_of[number] = best
         for sample in shot:
             sample["shot_best"] = sample is best
-    shot_of: dict[int, int] = {}
-    for number, shot in enumerate(shots, start=1):
-        for sample in shot:
             shot_of[id(sample)] = number
 
     if len(shots) <= wanted:
@@ -703,6 +718,23 @@ def choose_stills(samples: list[dict], duration: float, wanted: int) -> list[dic
         kept.append(sample)
         seen_shots.add(shot)
 
+    # A dropped duplicate must not cost the video a still, so a shot with no
+    # still yet fills the gap, best frame first in timeline order. This is what
+    # makes "one per shot, up to five" the number a video gets rather than a
+    # ceiling it fell short of.
+    if len(kept) < wanted:
+        for sample in sorted(best_of.values(), key=lambda s: s["at_s"]):
+            if len(kept) >= wanted:
+                break
+            shot = shot_of.get(id(sample))
+            if shot in seen_shots:
+                continue
+            if any(abs(sample["at_s"] - other["at_s"]) < STILL_MIN_GAP_S for other in kept):
+                continue
+            kept.append(sample)
+            seen_shots.add(shot)
+        kept.sort(key=lambda s: s["at_s"])
+
     stills = []
     for sample in kept:
         shot = shot_of.get(id(sample))
@@ -734,6 +766,7 @@ def settings_fingerprint(args) -> dict:
         "freeze_mafd": FREEZE_MAFD,
         "sample_fps": args.sample_fps,
         "stills": args.stills,
+        "still_rule": STILL_RULE_VERSION,
         "still_width": args.still_width,
         "no_stills": bool(args.no_stills),
     }

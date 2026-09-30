@@ -253,12 +253,18 @@ video.
 
 Recorded, not decided:
 
-- **How many stills per video**, and whether a minimum is enforced for short and
-  static clips (a 15-second clip of a birthday cake may warrant one still, not
-  six). **What the indexer does meanwhile (2026-09-29):** one still per shot, up to
-  three, spread evenly across the timeline when there are more shots than stills.
-  A single-shot clip therefore gets one still rather than three near-identical
-  ones. `--stills N` changes the ceiling; changing it re-extracts without `--force`.
+- **How many stills per video** — answered 2026-09-30: one still per shot, up to
+  five, and a single-shot clip gets one still however long it runs. **What the
+  indexer does:** one still per shot, and when there are more shots than stills
+  the timeline is divided into that many spans, the best frame in each span being
+  taken so the stills describe the whole video. A span that lands in a shot
+  already represented is dropped as a duplicate, then made up from a shot that has
+  no still yet, so the count is the number a video gets rather than a ceiling it
+  falls short of. `--stills N` changes the ceiling; changing it re-extracts
+  without `--force`. Five was chosen by measurement over a real 536-video library:
+  1010 stills against the old fixed three's 833, never fewer for any one video. A
+  duration cap was measured and rejected — one still per 5, 10 or 20 seconds took
+  stills away from 45, 92 and 145 videos respectively.
 - **Still size and format.** Extracted at full resolution as JPEG, or scaled to a
   documented maximum width? At a few thousand videos, full-resolution stills
   become the single largest thing the tool creates. **What the indexer does

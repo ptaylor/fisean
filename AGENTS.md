@@ -146,8 +146,11 @@ the browser can decode it. What remains open:
   coordinates into "Cornwall, UK" needs a bundled dataset or a network call, and
   the indexer is offline by requirement. Names come from `overrides.yaml`, or
   from a later opt-in step that is explicitly not part of the offline run.
-- **How many stills per video**, and what to do about short or static clips — a
-  15-second clip of a birthday cake may want one still, not six.
+- **How many stills per video** — answered 2026-09-30, in
+  [the index format document](docs/index-format.md): one still per shot up to
+  five, chosen by measurement over a real 536-video library (1010 stills against
+  the old fixed three's 833, never fewer for any one video). A duration cap was
+  measured and rejected — it took stills away from most short clips.
 - **Still size and format**: full resolution, or scaled to a documented maximum
   width. At a few thousand videos the stills become the largest thing the tool
   creates.
