@@ -46,7 +46,7 @@ without rewriting the other:
 | Part | What it does |
 | --- | --- |
 | **Indexer** | `scan.py`: walks a directory hierarchy offline and writes an index — technical metadata, duration, capture dates, quality measurements, and the stills that best represent each video. Classification and summaries are **not** written yet. |
-| **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality — as a grid of covers or a list with larger stills, showing every extracted still rather than only the cover. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
+| **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality, and by how long — a min–max slider whose ends are the library's own shortest and longest video — as a grid of covers or a list with larger stills, showing every extracted still rather than only the cover. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
 
 The index format is the contract between them, specified in
 [docs/index-format.md](docs/index-format.md) so that either half can be replaced.

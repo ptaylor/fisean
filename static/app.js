@@ -22,6 +22,15 @@ const QUALITY = {
 const PLAYABLE_CONTAINERS = new Set(['mp4', 'mov', 'm4v', 'webm']);
 const PLAYABLE_CODECS = new Set(['h264', 'hevc', 'vp8', 'vp9', 'av1']);
 
+// The duration filter is two range inputs over one track, and what they carry is
+// a position rather than a time: the scale is exponential because a video library
+// is. Measured over a real 538-video library - median 21s, 90th percentile 1m
+// 33s, longest 1h 54m - a linear track 6859 seconds wide puts 90% of the videos
+// inside the first 1.4% of its width, where one pixel is half a minute and a
+// twenty-second clip cannot be selected at all. On this scale a pixel near the
+// short end is worth about a second.
+const DURATION_STEPS = 1000;
+
 const DATE_SOURCE_LABEL = {
   container_metadata: 'from the file metadata',
   filename: 'from the file name',
@@ -45,6 +54,11 @@ const state = {
   selected: null,
   still: 0,
   filters: new Map(),   // axis -> Set(values)
+  // The duration range as slider positions (0 = no lower bound, DURATION_STEPS =
+  // no upper bound), and the library's own extent, which is only known once the
+  // records have been read.
+  duration: { loPos: 0, hiPos: DURATION_STEPS },
+  durationExtent: null,
   query: '',
   sort: 'date-desc',
   // The list is the default because it is the one that shows what was extracted:
@@ -185,12 +199,141 @@ const valuesOf = (axis, a) => axis.values(a).map(entry => ({ value: entry[1], la
 
 function matches(a, ignoreAxis) {
   if (state.query && !searchHaystack(a).includes(state.query)) return false;
+  // 'duration' is not an axis - it is a range, and it filters here rather than
+  // through state.filters - but it is ignored by the same rule, so that the
+  // readout can ask for "everything except the range" the way a chip asks about
+  // its own axis.
+  if (ignoreAxis !== 'duration' && !durationMatches(a)) return false;
   for (const [key, chosen] of state.filters) {
     if (key === ignoreAxis || chosen.size === 0) continue;
     const values = valuesOf(axisFor(key), a).map(entry => entry.value);
     if (!values.some(value => chosen.has(value))) return false;
   }
   return true;
+}
+
+/* --------------------------------------------------------------- duration */
+
+// The shortest and longest video in the library, in whole seconds. Floored to a
+// whole second so the ends of the slider read as times, but kept positive: a
+// logarithmic scale has no zero, and flooring a sub-second shortest video to zero
+// would divide by it while a floor of one second would hide that video instead.
+function measureDurationExtent() {
+  let shortest = null, longest = null;
+  for (const asset of state.assets) {
+    const d = n(asset.technical?.duration_s);
+    if (d === null) continue;
+    shortest = shortest === null ? d : Math.min(shortest, d);
+    longest = longest === null ? d : Math.max(longest, d);
+  }
+  state.durationExtent = shortest === null ? null : {
+    lo: shortest >= 1 ? Math.floor(shortest) : shortest,
+    hi: Math.max(2, Math.ceil(longest)),
+  };
+}
+
+// A slider position as seconds. Position 0 is not the shortest video but "no
+// lower bound", so at full width the range excludes nothing - including a file
+// whose duration was never measured, which no range can contain.
+function positionSeconds(position) {
+  const { lo, hi } = state.durationExtent;
+  if (position <= 0) return 0;
+  return lo * Math.pow(hi / lo, (position - 1) / (DURATION_STEPS - 1));
+}
+
+// The selected range in whole seconds, widened to the enclosing second so that
+// dragging a thumb back to where it started cannot drop a video through
+// rounding. It filters only once it excludes something: the foot of the slider
+// is where the scale's own low end floors to zero, and without that rule a file
+// whose duration was never measured would leave the library for a range that
+// contains everything.
+function durationRange() {
+  if (!state.durationExtent) return { lo: 0, hi: 0, narrowed: false };
+  const { loPos, hiPos } = state.duration;
+  const lo = Math.floor(positionSeconds(loPos));
+  const hi = Math.ceil(positionSeconds(hiPos));
+  return { lo, hi, narrowed: lo > 0 || hiPos < DURATION_STEPS };
+}
+
+function durationMatches(asset, range = durationRange()) {
+  if (!range.narrowed) return true;
+  const d = n(asset.technical?.duration_s);
+  return d !== null && d >= range.lo && d <= range.hi;
+}
+
+function resetDuration() {
+  state.duration.loPos = 0;
+  state.duration.hiPos = DURATION_STEPS;
+}
+
+function renderDuration() {
+  const facet = el('div', { class: 'facet' }, el('h2', { text: 'How long' }));
+  if (!state.durationExtent) {
+    facet.append(el('div', { class: 'note', text: 'no durations were measured' }));
+    return facet;
+  }
+
+  const thumb = (id, value, label) => el('input', {
+    type: 'range', id, min: '0', max: String(DURATION_STEPS), step: '1',
+    value: String(value), 'aria-label': label,
+  });
+  const low = thumb('duration-lo', state.duration.loPos, 'shortest duration');
+  const high = thumb('duration-hi', state.duration.hiPos, 'longest duration');
+
+  const fill = el('div', { class: 'range-fill' });
+  const lowText = el('span');
+  const countText = el('span', { class: 'n' });
+  const highText = el('span');
+
+  const paint = () => {
+    const range = durationRange();
+    const { loPos, hiPos } = state.duration;
+    fill.style.left = `${(loPos / DURATION_STEPS) * 100}%`;
+    fill.style.width = `${((hiPos - loPos) / DURATION_STEPS) * 100}%`;
+    lowText.textContent = duration(range.lo);
+    highText.textContent = duration(range.hi);
+    // What the grid would hold if the range were applied now, by the same rule
+    // the grid uses, so the number cannot disagree with what a release shows. It
+    // counts against the other filters only, the way a chip's own count does.
+    countText.textContent = String(state.assets
+      .filter(a => matches(a, 'duration') && durationMatches(a, range)).length);
+    // A range input reports its position, which means nothing here, so the
+    // spoken value is the time it stands for.
+    low.setAttribute('aria-valuetext', duration(range.lo));
+    high.setAttribute('aria-valuetext', duration(range.hi));
+  };
+
+  // The thumbs cannot cross: a low edge above the high edge is not a range, and
+  // the control would quietly select nothing.
+  const moved = (edge, input) => {
+    const key = edge === 'lo' ? 'loPos' : 'hiPos';
+    if (edge === 'lo') state.duration.loPos = Math.min(Number(input.value), state.duration.hiPos);
+    else state.duration.hiPos = Math.max(Number(input.value), state.duration.loPos);
+    input.value = String(state.duration[key]);
+  };
+
+  // The readout follows the thumb; the grid follows the release. A rebuild is
+  // every row in the library, and one per pixel of a drag is not free.
+  const commit = (edge, input) => {
+    const keepFocus = document.activeElement === input;
+    moved(edge, input);
+    render();
+    // The rebuild replaced the element under the pointer, so the focus is put
+    // back where it was: without this a thumb driven by the arrow keys works
+    // exactly once.
+    if (keepFocus) document.getElementById(input.id)?.focus({ preventScroll: true });
+  };
+
+  low.addEventListener('input', () => { moved('lo', low); paint(); });
+  high.addEventListener('input', () => { moved('hi', high); paint(); });
+  low.addEventListener('change', () => commit('lo', low));
+  high.addEventListener('change', () => commit('hi', high));
+
+  paint();
+  facet.append(el('div', { class: 'range' },
+    el('div', { class: 'range-track' }), fill, low, high),
+    el('div', { class: 'range-readout' }, lowText, countText, highText));
+  return facet;
 }
 
 /* ------------------------------------------------------------------- sort */
@@ -215,7 +358,16 @@ function render() {
     items.length === total ? `${total} assets` : `${items.length} of ${total} assets`;
 
   const rail = document.getElementById('rail');
-  rail.replaceChildren(...AXES.map(renderFacet), renderClear());
+  const sections = [];
+  for (const axis of AXES) {
+    sections.push(renderFacet(axis));
+    // "When" and "how long" are the two questions about the file itself, and
+    // everything below them is about what is inside it. Duration is a range over
+    // a measurement rather than a set of values, so it is not one of the axes and
+    // is rendered here instead.
+    if (axis.key === 'when') sections.push(renderDuration());
+  }
+  rail.replaceChildren(...sections, renderClear());
   renderItems(items);
 }
 
@@ -226,6 +378,9 @@ function renderFacet(axis) {
   const counts = new Map();
   const weak = new Set();
   for (const asset of state.assets) {
+    // The rule the comment above describes. It was missing, so every count was
+    // the whole library's and the "empty" state below was unreachable.
+    if (!matches(asset, axis.key)) continue;
     for (const entry of valuesOf(axis, asset)) {
       counts.set(entry.value, (counts.get(entry.value) || 0) + 1);
       if (entry.weak) weak.add(entry.value);
@@ -253,10 +408,16 @@ function renderFacet(axis) {
 }
 
 function renderClear() {
-  const active = state.filters.size > 0 || state.query;
+  const active = state.filters.size > 0 || state.query || durationRange().narrowed;
   return el('div', {}, el('button', {
     class: 'clear', text: 'clear filters', disabled: active ? null : 'disabled',
-    onclick: () => { state.filters.clear(); state.query = ''; document.getElementById('q').value = ''; render(); },
+    onclick: () => {
+      state.filters.clear();
+      state.query = '';
+      resetDuration();
+      document.getElementById('q').value = '';
+      render();
+    },
   }));
 }
 
@@ -778,6 +939,9 @@ async function start() {
   setLoading(0, names.length);
   const loaded = await loadConcurrently(names, 8, (done, total) => setLoading(done, total));
   state.assets = loaded.assets;
+  // The ends of the duration slider are the library's own shortest and longest
+  // video, so they cannot be known before the records are.
+  measureDurationExtent();
 
   if (loaded.failed.length) {
     // The full list goes to the console, which is where someone looking into it

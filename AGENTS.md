@@ -122,6 +122,12 @@ Numbered, as agreed, so that a later change can be checked against them.
 8. Filters and lists the library along four axes: **when** (date), **where**
    (GPS, and a place label where one is known), **who/what** (people, animals,
    objects, activity), and **quality** (sharp, dark, still).
+   **Addition (2026-09-30):** it also filters by **duration**, as a min–max
+   slider whose ends are the shortest and longest video in the index. A range
+   over a measurement is not a fifth axis, which is why it is not listed with
+   them; the scale is exponential because the library is, measured over the real
+   library as a linear track that put 90% of the videos in the first 1.4% of its
+   width — one pixel to half a minute, and a twenty-second clip unselectable.
 9. Shows the stills as the primary browsing surface, and looks good doing it.
 10. Plays a video where the browser can decode it, and otherwise offers a
     one-click **copy of the full path** so it can be opened in a player.
