@@ -444,6 +444,13 @@ honest when it is also a file boundary.
     `allow_nan=False` so this class of fault stops at the scanner. A record whose
     measurements change meaning invalidates the version these were written under,
     which is what `SCAN_VERSION` is for.
+  - **A tag that parses is not a fact.** Legacy 3GP writes a `location` tag of
+    `+00.0000+000.0000/` when the phone had no GPS lock — 75 files in one real
+    library, every one of them drawn by the browser at `0.0000, 0.0000`, a point
+    in the Atlantic. `ffprobe` reports the tag faithfully; the decision that it is
+    not a position belongs here. Both zeroes together are stored as `null`, a
+    single zero is kept because Greenwich is a place, and an out-of-range pair is
+    discarded.
   - **`avg_frame_rate` is unreliable.** DV reports `60000/1` for a 25fps stream,
     so a sane `r_frame_rate` wins when the average is absurd — and audio-only
     streams report `0/0`, which must not be divided.

@@ -50,7 +50,10 @@ from pathlib import Path
 # version would not write. The bump is what makes the next scan re-measure the
 # files affected - three records in one real library were unreadable in the
 # browser until it was done.
-SCAN_VERSION = "2"
+# Bumped to 3 on 2026-09-30: a tag that is not a fix is refused as well. The
+# 75 records that had passed "+00.0000+000.0000/" through as a position are
+# re-measured, so the browser stops drawing them at 0.0000, 0.0000.
+SCAN_VERSION = "3"
 INDEX_VERSION = 1
 ASSET_VERSION = 1
 INDEX_DIR_NAME = "fisean-index"
@@ -461,14 +464,28 @@ ISO6709 = re.compile(r"(?P<lat>[+-]\d{1,2}(?:\.\d+)?)(?P<lon>[+-]\d{1,3}(?:\.\d+
 
 
 def parse_gps(tags: dict) -> dict | None:
-    """ISO 6709, as written by phones: "+55.9533-003.1883/"."""
+    """ISO 6709, as written by phones: "+55.9533-003.1883/".
+
+    Not every tag that parses is a position. A phone without a fix writes the tag
+    anyway, with zeroes where the coordinates go: 75 records in the real library
+    held "+00.0000+000.0000/" and nothing else, and the browser drew every one of
+    them as 0.0000, 0.0000 - a point in the Atlantic, and a claim the file does
+    not make. Both zeroes together are therefore no fix. A single zero is kept,
+    because the Greenwich meridian and the equator are places.
+    """
     for key in ("com.apple.quicktime.location.ISO6709", "location", "location-eng"):
         value = tags.get(key)
         if not isinstance(value, str):
             continue
         match = ISO6709.search(value)
-        if match:
-            return {"lat": float(match.group("lat")), "lon": float(match.group("lon"))}
+        if not match:
+            continue
+        lat, lon = float(match.group("lat")), float(match.group("lon"))
+        if lat == 0.0 and lon == 0.0:
+            continue
+        if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+            continue
+        return {"lat": lat, "lon": lon}
     return None
 
 

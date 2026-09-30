@@ -173,6 +173,25 @@ is re-encoded, which is worse.
 Legacy `3gp`, `dv`, `flv` and `avi` files usually carry no capture date at all,
 which is why this field exists rather than a bare timestamp.
 
+### `captured.gps`
+
+`null` when the file carries no position. A position is stored only when the tag
+is one that stands up as a location:
+
+- **Both coordinates zero is not a fix.** A phone without a GPS lock writes the
+  tag anyway: 75 files in one real library read `+00.0000+000.0000/`, with an
+  empty altitude where a value would end. Stored as a position, every one of them
+  was drawn at `0.0000, 0.0000` — a point in the Atlantic, and a claim the file
+  does not make. Both zeroes together are stored as `null`.
+- **A single zero is kept.** The Greenwich meridian and the equator are places,
+  and a fix on either is real.
+- **Out of range is not a position.** A latitude outside ±90 or a longitude
+  outside ±180 is discarded rather than stored.
+
+In that library only `3gp` files carry the tag at all, so a library whose
+cameras never recorded a position gets an empty `where` facet rather than a row
+of zeroes.
+
 ### `labels[].source`
 
 `detector` (an object detector's class), `zero_shot` (a text label asked of a
