@@ -448,9 +448,9 @@ honest when it is also a file boundary.
     `+00.0000+000.0000/` when the phone had no GPS lock — 75 files in one real
     library, every one of them drawn by the browser at `0.0000, 0.0000`, a point
     in the Atlantic. `ffprobe` reports the tag faithfully; the decision that it is
-    not a position belongs here. Both zeroes together are stored as `null`, a
-    single zero is kept because Greenwich is a place, and an out-of-range pair is
-    discarded.
+    not a position belongs here. A zero in either coordinate is stored as `null`
+    (the sentinel writes both, and a real fix on the meridian reads `0.0003`, not
+    `0.0000`), and an out-of-range pair is discarded.
   - **`avg_frame_rate` is unreliable.** DV reports `60000/1` for a 25fps stream,
     so a sane `r_frame_rate` wins when the average is absurd — and audio-only
     streams report `0/0`, which must not be divided.

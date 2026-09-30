@@ -470,8 +470,10 @@ def parse_gps(tags: dict) -> dict | None:
     anyway, with zeroes where the coordinates go: 75 records in the real library
     held "+00.0000+000.0000/" and nothing else, and the browser drew every one of
     them as 0.0000, 0.0000 - a point in the Atlantic, and a claim the file does
-    not make. Both zeroes together are therefore no fix. A single zero is kept,
-    because the Greenwich meridian and the equator are places.
+    not make. A zero in either coordinate is therefore no fix, not just a pair of
+    them: the sentinel writes both, and an exact 0.0000 from a real fix is a
+    coincidence rather than a position - a phone on the Greenwich meridian reads
+    0.0003, and the meridian is a line, not a reading.
     """
     for key in ("com.apple.quicktime.location.ISO6709", "location", "location-eng"):
         value = tags.get(key)
@@ -481,7 +483,7 @@ def parse_gps(tags: dict) -> dict | None:
         if not match:
             continue
         lat, lon = float(match.group("lat")), float(match.group("lon"))
-        if lat == 0.0 and lon == 0.0:
+        if lat == 0.0 or lon == 0.0:
             continue
         if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
             continue

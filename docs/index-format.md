@@ -178,13 +178,13 @@ which is why this field exists rather than a bare timestamp.
 `null` when the file carries no position. A position is stored only when the tag
 is one that stands up as a location:
 
-- **Both coordinates zero is not a fix.** A phone without a GPS lock writes the
-  tag anyway: 75 files in one real library read `+00.0000+000.0000/`, with an
-  empty altitude where a value would end. Stored as a position, every one of them
-  was drawn at `0.0000, 0.0000` — a point in the Atlantic, and a claim the file
-  does not make. Both zeroes together are stored as `null`.
-- **A single zero is kept.** The Greenwich meridian and the equator are places,
-  and a fix on either is real.
+- **A zero coordinate is not a fix.** A phone without a GPS lock writes the tag
+  anyway: 75 files in one real library read `+00.0000+000.0000/`, with an empty
+  altitude where a value would end. Stored as a position, every one of them was
+  drawn at `0.0000, 0.0000` — a point in the Atlantic, and a claim the file does
+  not make. A `0.0` in either coordinate is stored as `null`: the sentinel writes
+  both, and an exact `0.0000` from a real fix is a coincidence rather than a
+  position — a phone on the Greenwich meridian reads `0.0003`, not `0.0000`.
 - **Out of range is not a position.** A latitude outside ±90 or a longitude
   outside ±180 is discarded rather than stored.
 
