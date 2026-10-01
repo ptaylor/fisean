@@ -140,12 +140,18 @@ is re-encoded, which is worse.
 
   "labels": [
     { "text": "outdoors", "group": "setting", "source": "zero_shot",
-      "model": "siglip2-so400m-384", "score": 0.91, "frames": 9, "weak": false },
+      "model": "clip-vit-b-32/openai", "score": 0.91, "frames": 9, "weak": false },
     { "text": "bicycle", "group": "what", "source": "detector",
       "model": "yolo26n", "score": 0.77, "frames": 4, "count": 3, "weak": false },
     { "text": "children playing", "group": "activity", "source": "caption",
       "model": "…", "score": null, "frames": 2, "weak": true }
   ],
+
+  // Written by `fisean label`. What makes a record skippable by the next run:
+  // the labels above came from this model and this vocabulary. Absent means the
+  // record has never been labelled, which is not the same as labels being empty.
+  "label": { "version": 1, "model": "clip-vit-b-32/openai",
+             "vocabulary": "5bb2eeb0…", "frames": 12, "at": "2026-10-01T19:05:07Z" },
 
   "summary": { "text": "…", "source": "caption", "model": "…" },  // or null
 
@@ -233,6 +239,22 @@ vision-language model), `caption` (extracted from a generated description),
 activity judgements made from single frames are hints, not facts. Weak labels are
 shown in the interface with that caveat and are opt-in when filtering.
 
+### `label` — how a record's labels were produced
+
+Written by `fisean label`, and the only field that command touches. **Labelling
+takes no measurement and invalidates none**: it changes no `analysis`, no `stills`,
+no `scan` block and no `SCAN_VERSION`, so re-running it after editing
+`vocabulary.yaml` costs a labelling pass and never a re-scan.
+
+`model` and `vocabulary` together are the skip test: a record whose `label` block
+already names this model and this vocabulary hash is left alone, and `--force`
+overrides it. `vocabulary` is the same SHA-256 the manifest carries, so a reader
+can tell whether a library's labels reflect the vocabulary file as it now stands.
+`frames` is how many frames were sampled per video, and `at` is when.
+
+The block is an addition under rule 7 — a browser that does not recognise it
+ignores it, and one that does may use `vocabulary` to show labels as stale.
+
 ### `analysis`
 
 Measurements only, all nullable, all describing the `sampled_frames` that were
@@ -315,12 +337,27 @@ Recorded, not decided:
   duration cap was measured and rejected — one still per 5, 10 or 20 seconds took
   stills away from 45, 92 and 145 videos respectively.
 - **Still size and format.** Extracted at full resolution as JPEG, or scaled to a
-  documented maximum width? At a few thousand videos, full-resolution stills
-  become the single largest thing the tool creates. **What the indexer does
-  meanwhile:** JPEG, scaled to a maximum width of 1280px, never upscaled.
-  `--still-width N` changes it.
+  documented maximum width? **Measured 2026-10-01, and the worry was misplaced:**
+  the fear was that full-resolution stills would become the largest thing the tool
+  creates, but over a real 538-video library 994 stills at 1280px are **72 MB**
+  against the playable copies' **1.5 GB** — twenty times smaller, so the stills are
+  not the thing to economise on. **What the indexer does meanwhile:** JPEG, scaled
+  to a maximum width of 1280px, never upscaled. `--still-width N` changes it.
 - **Whether the stills are covered by `overrides.yaml`** — a hand-picked cover
   still per video is very likely to be wanted, and that is a user-owned choice
   the index cannot make.
+- **Whether the label thresholds are tuned by hand** — answered 2026-10-01, in
+  part. The values in `vocabulary.yaml` are still guesses, but no longer unmeasured
+  ones: `fisean label --calibrate` prints the per-frame score distribution for every
+  label across the library, which is the column a threshold has to be read off.
+  Measured on one machine, a label the model reads *correctly* scores 0.3–0.6 per
+  frame rather than 0.9, so a threshold near a label's p90 keeps the videos where it
+  is unmistakable and one near its p99 keeps the few it shouts about. Re-tuning is
+  editing the file and re-running `fisean label`, which touches no measurement.
+- **Whether a stronger model is worth its cost.** CLIP `ViT-B-32` runs at 58 ms per
+  frame on CPU, which is a 538-video library in about 25 minutes. SigLIP 2 scores
+  better in its own benchmarks and carries an Apache-2.0 licence, but open_clip
+  3.3.0 does not ship a SigLIP 2 checkpoint, so it means a second model stack
+  (`transformers`) beside the first. Not decided.
 - **Multiple media roots** per index. Version 1 has exactly one; a second disk
   means a second index, unless a `roots[]` array proves necessary.

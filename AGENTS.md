@@ -19,12 +19,22 @@ stylesheet, the script and the icon — served from disk. `scan.py` is the index
 it walks a directory hierarchy, measures each video with `ffprobe` and `ffmpeg`,
 picks the stills that represent it, and writes an index the browser reads.
 
-**Content classification and summaries are not written yet.** `scan.py` writes
-`labels: []` and `summary: null`: it measures, it does not yet interpret. So a
-scanned library has nothing in the browser's "who & what" facet, and the browser
-says "nothing here" rather than inventing anything. Filling that in needs the
-detector and the embedding models, which is the next piece of work — see the
-candidate stack below.
+**Content classification is written; summaries are not.** **Addition
+(2026-10-01):** this paragraph used to say nothing was interpreted at all, and
+that filling it in needed the detector and the embedding models. The embedder is
+now adopted and working — CLIP through open_clip, run by `fisean label` — and it
+writes `labels`, so a scanned library has something in the browser's "who & what"
+facet to filter by. Two things were deliberately left out of that first pass: the
+**detector** (counts of people and objects come from the vocabulary's phrases,
+not from YOLO) and **summaries** (`summary` is still `null` for every asset; a
+template over the labels is the next piece there).
+
+The labelling pass is measured rather than hoped for: 58 ms per frame on this
+machine, twelve frames per video, so a 538-video library is about 25 minutes of
+CPU. What the model sees was checked by eye against the footage — a concert read
+"dancing or performing" from its stage, two videos it called "cycling" at 0.93
+and 0.91 were confirmed as bike rides, and the calibration negatives caught an
+11-minute `.mov` that is a video game's menu screen.
 
 Until a real library has been scanned, the browser is still developed against the
 synthetic fixture library in [`fixtures/`](fixtures/README.md), so the numbers on
@@ -33,10 +43,13 @@ screen there describe invented footage.
 **What the indexer does and does not do yet.** It measures: container and codec,
 duration, dimensions, frame rate, capture date and GPS where the file carries
 them, scene changes, motion, blur and brightness, and it extracts the stills. It
-does not interpret: `labels` is an empty list and `summary` is null for every
-asset, so anything below about classification, keywords and summaries is still a
-decision rather than a description of working code. The other exception is
-FFmpeg, which is measured rather than assumed — see the candidate stack.
+labels: `fisean label` asks a vision-language model how well each phrase in
+`vocabulary.yaml` fits a dozen sampled frames, and writes the phrases that survive
+into `labels`, each carrying its model, its score and how many frames agreed. It
+does not yet summarise, and it does not yet count: `summary` is null for every
+asset, and objects are recognised as phrases rather than as detections with
+counts. FFmpeg and the model are both measured rather than assumed — see the
+candidate stack and the Technology Stack.
 
 ## What the tool is for
 
@@ -262,10 +275,12 @@ is the whole answer; licences are from the projects' own pages.
 | Katna | — | keyframe extraction | the repository now returns 404; treat as gone |
 | MTN (movie thumbnailer) | — | contact sheets | its page would not load, so it is unverified and not an option |
 
-## Candidate stack — nothing chosen yet
+## Candidate stack — partly chosen
 
-Not a Technology Stack entry, because no dependency has been adopted. What has
-actually been measured:
+**Correction (2026-10-01):** this section used to be called "nothing chosen yet",
+because none of it was. The zero-shot embedder is now adopted — CLIP through
+open_clip, with its own Technology Stack entry above and its licences verified
+below — and the rest of this is still a survey. What has actually been measured:
 
 - **FFmpeg 8.1.2** at `/usr/local/bin/ffmpeg`, a GPL build (see Licence). It
   covers all eight target extensions. Its filters already include most of the
@@ -279,17 +294,25 @@ actually been measured:
   (MIT) the stronger but frozen alternative. Either way, the `thumbnail` filter
   plus the quality filters above can choose the frame within each shot.
 
-- **Object detection:** Ultralytics YOLO (the YOLO26 family, COCO 80 classes).
-  Its licence is **AGPL-3.0**, verified in the repository — compatible with ours
-  only because of the relicensing above, and it would have been a blocker under
-  MIT.
-- **Zero-shot labels and embeddings:** `open_clip` (CLIP and SigLIP2
-  checkpoints; the SigLIP2 models report roughly 82–84% zero-shot ImageNet
-  accuracy in that project's own table). Check its LICENSE file before adopting —
-  the GitHub page links to it rather than stating it.
+- **Zero-shot labels and embeddings: adopted.** `open_clip` 3.3.0 with the CLIP
+  `ViT-B-32`/`openai` checkpoint. Licences verified 2026-10-01: open_clip is
+  **MIT** (its own LICENSE file) and the OpenAI CLIP weights are **MIT** (the
+  `openai/CLIP` repository), so both are AGPL-compatible. SigLIP 2 is the stronger
+  model on paper — its weights are **Apache-2.0** — but **open_clip 3.3.0 carries
+  no SigLIP 2 checkpoint**, so trying it means going through `transformers`
+  instead. Recorded as a follow-up rather than as a plan.
+- **Object detection: still not adopted.** Ultralytics YOLO (the YOLO26 family,
+  COCO 80 classes) is **AGPL-3.0**, verified in the repository — compatible with
+  ours only because of the relicensing above, and it would have been a blocker
+  under MIT. The first labelling pass deliberately went without it: phrases in the
+  vocabulary answer "who & what" well enough to browse by, and a detector earns its
+  place when *counts* are wanted, which nothing in the interface asks for yet.
 - **Model weights are a one-time download.** Requirement 1 says the indexer runs
   offline, so that means *no network at index time*: weights are fetched
-  beforehand, once, and their directory earns a `.gitignore` entry when it exists.
+  beforehand, once. **Correction (2026-10-01):** this used to say the weights
+  directory "earns a `.gitignore` entry when it exists". It exists, and it earns
+  nothing: open_clip caches in `~/.cache/clip`, outside the repository, so no
+  pattern is needed and none was added.
 
 The design questions this section used to list — the browse dimensions and the
 classification scheme — are settled. See the requirements above, and
@@ -370,6 +393,7 @@ Rules:
 | `fisean.py` | the `fisean` command: one entry point that dispatches to the halves, and implements neither |
 | `browse.py` | the browser half: CLI and HTTP server, nothing else |
 | `scan.py` | the indexer: walks a hierarchy, measures, extracts stills, writes the index |
+| `label.py` | the other half of the indexer: asks a model what is in each video and writes `labels`. The only file with dependencies, and therefore the only one that runs in its own environment |
 | `static/` | its interface — `index.html`, `app.css`, `app.js`, `icon.svg`, `favicon.ico`, served from disk |
 | `install.sh` | symlinks `fisean` into `$BIN` (default `~/bin`) and checks that it runs |
 | `fixtures/` | the synthetic library the browser is developed against — see [fixtures/README.md](fixtures/README.md) |
@@ -377,9 +401,12 @@ Rules:
 | `vocabulary.yaml` | the labels the indexer will ask for: project source, hand-edited |
 | `README.md` | the user-facing description of the tool |
 
-The indexer will be a sibling file, not a module inside `browse.py`: the two
-halves are separate programs by requirement, and the split is easier to keep
-honest when it is also a file boundary.
+The indexer is a sibling file, not a module inside `browse.py`: the two halves are
+separate programs by requirement, and the split is easier to keep honest when it
+is also a file boundary. `label.py` sits beside `scan.py` for the same reason and
+imports it, because measuring and labelling are two jobs of the same half — they
+share the terminal output, the ffmpeg call and the atomic write — and neither is
+reachable from the browser.
 
 ## Technology Stack
 
@@ -486,6 +513,49 @@ honest when it is also a file boundary.
 - **Docs**: https://ffmpeg.org/ffmpeg-filters.html ·
   https://ffmpeg.org/ffprobe.html
 
+### PyTorch and open_clip
+
+- **Role**: the labelling half of the indexer, and the project's only
+  dependencies. `label.py` samples a dozen frames from each video, encodes them
+  with CLIP, and compares them against every phrase in `vocabulary.yaml`. Nothing
+  in the browser half and nothing in `scan.py` imports either of them.
+- **Version**: PyTorch 2.2.2, open_clip 3.3.0, NumPy 1.26, Python 3.12 — in a
+  virtual environment at `~/.venvs/fisean-labels`. **Pinned to 2.2.2 because that
+  is the last release with an Intel-macOS wheel, and it stops at Python 3.12**, so
+  the labelling half cannot run on the interpreter the rest of the project uses.
+  That is why `fisean label` execs the environment's own interpreter, and prints
+  the two commands that build it when it is missing; `FISEAN_LABEL_PYTHON`
+  overrides where it looks.
+- **Best Practices**:
+  - **Keep it out of the other two commands.** The browser is dependency-free by
+    requirement and `scan` needs only FFmpeg. An import of torch in either would
+    trade away the property that makes them installable anywhere, for nothing.
+  - **Pin NumPy below 2 with this PyTorch.** 2.2.2 is built against NumPy 1.x and
+    fails on 2.x with a warning rather than an error, so the first symptom is a
+    tensor conversion that quietly does not work.
+  - **Score frame by frame, and never average the frames' embeddings.** Measured:
+    a mean embedding collapses exactly the labels worth having, because a label
+    true in two frames of twelve is averaged against ten unrelated ones — the bike
+    ride that reads 0.93 from its best frame reads 0.02 from the mean. Agreement
+    across frames is the vocabulary's `min_frames`, which is a count rather than a
+    diluted average, and the `score` written to a record is the frame that scored
+    highest.
+  - **The vocabulary is data, not code.** Labels, thresholds and `min_frames` live
+    in `vocabulary.yaml` and are meant to be edited after looking at real results.
+    Editing it means re-running `fisean label`, never re-scanning: labelling writes
+    `labels` and nothing else, so no measurement, no `SCAN_VERSION` and no still is
+    touched.
+  - **Calibrate a threshold from the report, not from a feeling.** `fisean label
+    --calibrate` prints the per-frame score distribution for every label, which is
+    what a threshold is compared against. The negatives in `vocabulary.yaml` are
+    scored alongside and never written: they are how a frame that is not footage of
+    the world gets caught.
+  - **Weights are cached outside the repository**, by open_clip in `~/.cache/clip`,
+    so nothing downloaded for labelling earns a `.gitignore` pattern. The first run
+    downloads about 350 MB.
+- **Docs**: https://pytorch.org/docs/stable/index.html ·
+  https://github.com/mlfoundations/open_clip
+
 ## Development Commands
 
 ```sh
@@ -497,6 +567,11 @@ BIN=/usr/local/bin ./install.sh           # elsewhere; a system path needs sudo
 
 fisean scan DIR                           # index DIR into DIR/fisean-index
 fisean scan DIR --force --jobs 4          # re-index everything, four at a time
+
+fisean label DIR                          # classify: what is happening in each video
+fisean label DIR --limit 20 --calibrate    # twenty videos, and the score distribution
+fisean label DIR --match 2013/ --force    # only paths containing 2013/, labelled again
+python3 label.py DIR --index /tmp/idx     # the labeller on its own, under its own python
 fisean scan DIR --proxy                   # also write MP4 copies a browser can play
 fisean scan DIR --proxy --proxy-seconds 0 # copies of the whole video, not a minute
 fisean scan DIR --index /tmp/idx          # keep the index somewhere else
@@ -529,13 +604,19 @@ path, and `--index` to put its output somewhere the library itself cannot hold o
 `static/app.js` needs only a page reload: both are read from disk per request,
 and `index.html` always is.
 
+`label` is the exception, and the only command with dependencies: it needs PyTorch
+and open_clip in `~/.venvs/fisean-labels` (see the Technology Stack), because
+PyTorch has no wheel for the interpreter everything else runs on. `fisean label`
+execs that interpreter itself and prints the two commands that create the
+environment when it is missing, so it never has to be run by hand.
+
 ## Checks before committing
 
 There is no test suite. Two gates must pass, and the second is not optional:
 **`py_compile` cannot see anything under `static/`.**
 
 ```sh
-python3 -m py_compile browse.py scan.py fixtures/make_fixtures.py fisean.py
+python3 -m py_compile browse.py scan.py label.py fixtures/make_fixtures.py fisean.py
 
 node --check static/app.js
 ```

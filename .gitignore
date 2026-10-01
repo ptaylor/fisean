@@ -24,6 +24,9 @@ fixtures/media/
 /fisean-index/
 
 # The indexer needs nothing else ignored: ffmpeg is run as a program and has no
-# build output, and its model weights are not downloaded yet — when they are,
-# their directory earns a pattern here in the same change. See AGENTS.md,
+# build output, and the models `fisean label` uses are cached by open_clip
+# outside the repository, in ~/.cache/clip. **Correction (2026-10-01):** this
+# note used to say the weights would earn a pattern here "when they are"
+# downloaded. They are downloaded, and they earn nothing — nothing fetched for
+# labelling lands in the tree, so there is no pattern to add. See AGENTS.md,
 # "Keeping .gitignore current".

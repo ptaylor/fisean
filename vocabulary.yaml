@@ -25,6 +25,17 @@
 # - Quality is **not** in this file. "Dark", "blurry" and "still" are thresholds
 #   over the numbers in `analysis`, derived by the browser, so they can be
 #   re-tuned without a re-index. See docs/index-format.md, rule 5.
+#
+# **Measured 2026-10-01.** With 57 candidates in one softmax, a label the model
+# reads *correctly* scores 0.3–0.6, not 0.9: on six real videos the concert's
+# stage read "dancing or performing" 0.89 with "a christmas tree" 0.55 behind
+# it, two bike rides read "cycling" 0.93 and 0.91, and a video game's menu read
+# "a screenshot of text" 0.93 — the calibration negative below, doing its job.
+# So the thresholds here are, if anything, too high, and a run that keeps almost
+# nothing is the thresholds talking rather than the model. `fisean label
+# --calibrate` reports where the scores actually fall over the whole library,
+# and the numbers below should be set from that report — which is the loop this
+# file was written for.
 
 version: 1
 
@@ -90,6 +101,29 @@ zero_shot:
   - { text: eating or a meal,  group: activity, threshold: 0.34, min_frames: 2, weak: true }
   - { text: opening presents,  group: activity, threshold: 0.34, min_frames: 2, weak: true }
   - { text: dancing or performing, group: activity, threshold: 0.34, min_frames: 2, weak: true }
+  # Added 2026-10-01. Singing is a guess made from the picture alone — audio is a
+  # non-goal — so a microphone and a stage have to stand in for the sound.
+  - { text: singing or music,  group: activity, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: a play or stage performance, group: activity, threshold: 0.32, min_frames: 2, weak: true }
+
+  # ------------------------------------------------------------------- screen
+  # A screen recording is not footage of the world, and a library of home video
+  # turns out to hold some: an 11-minute .mov in one real library is a football
+  # video game, country menus and all. What found it was the calibration
+  # negative below scoring that frame 0.93 on "a screenshot of text" — so the
+  # case earns a label rather than being left to whatever the scene labels make
+  # of a menu screen.
+  - { text: a screen recording or video game, group: screen, threshold: 0.30, min_frames: 2 }
+  - { text: a title card or words on screen,  group: screen, threshold: 0.34, min_frames: 2 }
+
+  # --------------------------------------------------------------------- mood
+  # The weakest labels in the file, and all weak: how something feels is read
+  # from faces and colour in a dozen still frames, which is a hint and not a
+  # fact. Here because browsing by "party" or "quiet" is wanted, not because the
+  # model can be trusted with it.
+  - { text: a happy or celebratory mood, group: mood, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: a sad or sombre mood,        group: mood, threshold: 0.34, min_frames: 2, weak: true }
+  - { text: a calm or quiet mood,        group: mood, threshold: 0.34, min_frames: 2, weak: true }
 
 # The detector's class list is fixed by the model (the COCO 80). These are the
 # classes worth keeping; the rest are recorded but not surfaced, because nobody

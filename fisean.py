@@ -33,11 +33,25 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 
 COMMANDS = {
-    "scan": ("scan.py", "index"),
-    "index": ("scan.py", "index"),
-    "open": ("browse.py", "browse"),
-    "browse": ("browse.py", "browse"),
+    "scan": ("scan.py", "index", None),
+    "index": ("scan.py", "index", None),
+    "label": ("label.py", "label", "fisean-labels"),
+    "open": ("browse.py", "browse", None),
+    "browse": ("browse.py", "browse", None),
 }
+
+# The labelling half is the only command with dependencies, and they cannot live
+# in the interpreter this project otherwise runs on: PyTorch's last Intel-macOS
+# wheel is 2.2.2, and it stops at Python 3.12. So `fisean label` execs the virtual
+# environment's own interpreter. FISEAN_LABEL_PYTHON overrides where that is.
+LABEL_PYTHON = Path(os.environ.get("FISEAN_LABEL_PYTHON") or
+                    Path.home() / ".venvs" / "fisean-labels" / "bin" / "python")
+
+LABEL_INSTALL = """fisean label needs PyTorch and open_clip, which live in their own environment:
+
+    python3.12 -m venv ~/.venvs/fisean-labels
+    ~/.venvs/fisean-labels/bin/pip install "torch==2.2.2" "numpy<2" open_clip_torch pyyaml
+"""
 
 # The directory name `fisean scan` writes by default, and the one `fisean browse`
 # looks for under a library root. The same constant appears in scan.py and
@@ -50,6 +64,7 @@ USAGE = """usage: fisean <command> [args]
 commands:
   scan <DIR>      index every video under DIR, so the browser can read it
   index <DIR>     the same command, under its other name
+  label <DIR>     ask a model what is happening in each video, for the "who & what" filter
   open <DIR>      serve the index in DIR and open it in a browser
   browse <DIR>    the same command, for when "browse" reads better
 
@@ -62,8 +77,14 @@ the browser opens the committed fixture.
 Anything after <DIR> is passed straight to the command:
 
   fisean scan ~/Videos --force --jobs 4
+  fisean label ~/Videos --limit 20 --calibrate
   fisean browse ~/Videos --port 9000
   fisean scan --help
+
+label is the one command with dependencies: it needs PyTorch and open_clip, which
+are installed in their own virtual environment because PyTorch has no wheel for the
+interpreter the rest of the project uses. Run it with that environment's python if
+the note it prints is more use than this line.
 """
 
 
@@ -105,7 +126,7 @@ def main(argv: list[str]) -> int:
 
     if command not in COMMANDS:
         return fail(f"unknown command '{command}'")
-    program, mode = COMMANDS[command]
+    program, mode, environment = COMMANDS[command]
 
     forwarded: list[str] = []
     if rest and not rest[0].startswith("-"):
@@ -130,9 +151,19 @@ def main(argv: list[str]) -> int:
     if not target.is_file():
         return fail(f"{program} is missing from {HERE} — the install is incomplete")
 
+    interpreter = sys.executable
+    if environment:
+        # A command with dependencies runs under its own interpreter, and says how
+        # to build that environment rather than failing with "no such file".
+        interpreter = str(LABEL_PYTHON if environment == "fisean-labels" else environment)
+        if not Path(interpreter).exists():
+            sys.stderr.write(LABEL_INSTALL)
+            sys.stderr.write(f"\nlooked for: {interpreter}\n")
+            return 1
+
     # execv, not subprocess: no extra process, no signal forwarding to get wrong,
     # and the exit code is the command's own.
-    os.execv(sys.executable, [sys.executable, str(target), *forwarded])
+    os.execv(interpreter, [interpreter, str(target), *forwarded])
     return 0  # unreachable while execv succeeds
 
 

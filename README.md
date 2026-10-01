@@ -10,18 +10,34 @@ by filename. *Físeán* is Irish for *video*.
 
 **Both halves work.** `fisean scan DIR` indexes the videos under `DIR` —
 technical metadata, duration, capture dates, quality measurements and the stills
-that represent each one — and `fisean browse DIR` shows them. Content
-classification is not written yet, so a scanned library has no labels or
-summaries: the browser's "who & what" filter is empty and says so, and a real
-library is not yet described by anything but its own measurements.
+that represent each one — `fisean label DIR` asks a vision-language model what is
+happening in each video so the library can be browsed by what is in it, and
+`fisean browse DIR` shows the result. Summaries are not written yet: `summary` is
+null for every asset, so a video is described by its measurements and its labels
+rather than by a sentence.
 
 ```sh
 ./install.sh                 # puts the fisean command in ~/bin
 
 fisean scan DIR              # index the videos under DIR
+fisean label DIR             # classify them: what is happening in each one
 fisean browse DIR            # serve that index and open it
 fisean open DIR              # the same command, under its other name
 ```
+
+`fisean label` is the only command with dependencies — PyTorch and open_clip —
+and they cannot live in the interpreter the rest of the project uses, because
+PyTorch has no wheel for it. It keeps them in its own environment at
+`~/.venvs/fisean-labels` and says how to build that environment if it is missing:
+
+```sh
+python3.12 -m venv ~/.venvs/fisean-labels
+~/.venvs/fisean-labels/bin/pip install "torch==2.2.2" "numpy<2" open_clip_torch pyyaml
+```
+
+To try it on part of a library before committing to all of it, `--limit` takes the
+first N and `--match` takes a year or a folder — `fisean label DIR --match 2013/`.
+Labelling writes labels and nothing else, so it never costs you a re-scan.
 
 Or without installing anything:
 
@@ -45,7 +61,7 @@ without rewriting the other:
 
 | Part | What it does |
 | --- | --- |
-| **Indexer** | `scan.py`: walks a directory hierarchy offline and writes an index — technical metadata, duration, capture dates, quality measurements, and the stills that best represent each video. Classification and summaries are **not** written yet. |
+| **Indexer** | `scan.py` walks a directory hierarchy offline and writes an index — technical metadata, duration, capture dates, quality measurements, and the stills that best represent each video. `label.py` then asks a vision-language model what is happening in each video and writes the answers as labels. Summaries are **not** written yet. |
 | **Browser** | A web app that reads only the index, and lists the library by when, where, who/what and quality, and by how long — a min–max slider whose ends are the library's own shortest and longest video — as a grid of covers or a list with larger stills, showing every extracted still rather than only the cover. It plays a video where the browser can decode it, and offers the full path for opening in a player where it cannot. |
 
 The index format is the contract between them, specified in
@@ -56,7 +72,9 @@ the library can stay read-only.
 
 Because it reads JSON and nothing else, the browser half has no machine-learning
 dependencies at all: the heavy work belongs to the indexer, where it can be slow
-and repeated without slowing down the interface.
+and repeated without slowing down the interface. The model the labeller uses is
+kept out of the browser and out of `scan` too — it lives in its own virtual
+environment, and only `fisean label` ever touches it.
 
 ## Formats
 
