@@ -416,6 +416,7 @@ function renderClear() {
       state.query = '';
       resetDuration();
       document.getElementById('q').value = '';
+      document.getElementById('q-clear').hidden = true;
       render();
     },
   }));
@@ -1011,6 +1012,15 @@ async function start() {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('q').addEventListener('input', event => {
     state.query = event.target.value.trim().toLowerCase();
+    document.getElementById('q-clear').hidden = event.target.value === '';
+    render();
+  });
+  document.getElementById('q-clear').addEventListener('click', () => {
+    const input = document.getElementById('q');
+    input.value = '';
+    state.query = '';
+    document.getElementById('q-clear').hidden = true;
+    input.focus();
     render();
   });
   document.getElementById('sort').addEventListener('change', event => {

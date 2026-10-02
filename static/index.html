@@ -19,7 +19,10 @@
     <h1>físe<span>án</span></h1>
   </div>
   <span class="count" id="count"></span>
-  <input type="search" id="q" placeholder="Search labels, summary, path…   /" aria-label="Search">
+  <span class="search">
+    <input type="search" id="q" placeholder="Search labels, summary, path…   /" aria-label="Search">
+    <button id="q-clear" class="search-clear" title="Clear the search" aria-label="Clear the search" hidden>×</button>
+  </span>
   <select id="sort" aria-label="Sort">
     <option value="date-desc">Newest first</option>
     <option value="date-asc">Oldest first</option>
