@@ -30,7 +30,7 @@
 #   re-tuned without a re-index. See docs/index-format.md, rule 5.
 #
 # **Measured 2026-10-01.** A score is now a label's share of a softmax over its
-# own group plus the four calibration negatives — not over the whole 61-prompt
+# own group plus the four calibration negatives — not over the whole
 # vocabulary. The old whole-vocabulary softmax gave the single best label almost
 # the whole budget: 115 of the 538 videos kept no label, and of those that kept
 # any, most kept labels from one group only. Per-group scoring fixes both — on a
@@ -64,6 +64,12 @@ zero_shot:
   - { text: party or celebration, group: setting, threshold: 0.32, min_frames: 2 }
   - { text: sports field or pitch, group: setting, threshold: 0.34, min_frames: 2 }
   - { text: night or darkness, group: setting, threshold: 0.35, min_frames: 2 }
+  - { text: at school,          group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: in a kitchen,       group: setting, threshold: 0.32, min_frames: 2 }
+  - { text: in an office,       group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: at a funfair,       group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: at an aquarium,     group: setting, threshold: 0.34, min_frames: 2 }
+  - { text: hills,              group: setting, threshold: 0.32, min_frames: 2 }
 
   # ------------------------------------------------------------ who is there
   - { text: people,            group: who, threshold: 0.28, min_frames: 3 }
@@ -75,6 +81,8 @@ zero_shot:
   - { text: a dog,             group: who, threshold: 0.34, min_frames: 2 }
   - { text: a cat,             group: who, threshold: 0.34, min_frames: 2 }
   - { text: horses or farm animals, group: who, threshold: 0.34, min_frames: 2 }
+  - { text: a family,           group: who, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: a witch,            group: who, threshold: 0.36, min_frames: 2, weak: true }
 
   # ------------------------------------------------------------ what is there
   - { text: a bicycle or bike, group: what, threshold: 0.32, min_frames: 2 }
@@ -91,6 +99,41 @@ zero_shot:
   - { text: balloons,          group: what, threshold: 0.36, min_frames: 2 }
   - { text: fireworks,         group: what, threshold: 0.36, min_frames: 2 }
   - { text: a christmas tree,  group: what, threshold: 0.36, min_frames: 2 }
+  # Added 2026-10-02 after a first pass over the real library turned up things
+  # the old list could not say. Expect to prune: several of these will be noise.
+  - { text: a scooter,          group: what, threshold: 0.34, min_frames: 2 }
+  - { text: flowers,            group: what, threshold: 0.32, min_frames: 2 }
+  - { text: a windmill,         group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a slide,            group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a swing,            group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a table,            group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a couch or sofa,    group: what, threshold: 0.34, min_frames: 2 }
+  - { text: furniture,          group: what, threshold: 0.32, min_frames: 2 }
+  - { text: books,              group: what, threshold: 0.32, min_frames: 2 }
+  - { text: a computer or laptop, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a mirror,           group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a fountain,         group: what, threshold: 0.34, min_frames: 2 }
+  - { text: fish,               group: what, threshold: 0.34, min_frames: 2 }
+  - { text: food,               group: what, threshold: 0.32, min_frames: 2 }
+  - { text: dominoes,           group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a chessboard or board game, group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a football,         group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a sandpit,          group: what, threshold: 0.34, min_frames: 2 }
+  - { text: trees or plants,    group: what, threshold: 0.32, min_frames: 2 }
+  - { text: a bridge,           group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a tunnel,           group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a costume or fancy dress, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a musical instrument, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a cot or crib,      group: what, threshold: 0.34, min_frames: 2 }
+  - { text: sunglasses or shades, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a painting or artwork, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a hot air balloon,  group: what, threshold: 0.36, min_frames: 2 }
+  - { text: a merry-go-round,   group: what, threshold: 0.36, min_frames: 2 }
+  - { text: face paint or makeup, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: science toys or exhibits, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a mobile home,      group: what, threshold: 0.34, min_frames: 2 }
+  - { text: a dashcam or in-car camera, group: what, threshold: 0.34, min_frames: 2 }
+  - { text: seaweed or rock pools, group: what, threshold: 0.36, min_frames: 2 }
 
   # ---------------------------------------------------------------- activity
   # All weak: an activity is a sequence, and the index samples still frames.
@@ -107,6 +150,11 @@ zero_shot:
   # non-goal — so a microphone and a stage have to stand in for the sound.
   - { text: singing or music,  group: activity, threshold: 0.32, min_frames: 2, weak: true }
   - { text: a play or stage performance, group: activity, threshold: 0.32, min_frames: 2, weak: true }
+  # Added 2026-10-02 from the real library.
+  - { text: driving,            group: activity, threshold: 0.32, min_frames: 2, weak: true }
+  - { text: a somersault or cartwheel, group: activity, threshold: 0.36, min_frames: 2, weak: true }
+  - { text: a headstand or handstand, group: activity, threshold: 0.36, min_frames: 2, weak: true }
+  - { text: painting or drawing, group: activity, threshold: 0.32, min_frames: 2, weak: true }
 
   # ------------------------------------------------------------------- screen
   # A screen recording is not footage of the world, and a library of home video

@@ -542,8 +542,8 @@ reachable from the browser.
     diluted average, and the `score` written to a record is the frame that scored
     highest.
   - **Softmax each label against its own group plus the calibration negatives,
-    never the whole vocabulary.** One softmax over all 61 prompts gave the single
-    best label almost the whole probability budget — 115 of 538 videos kept no
+    never the whole vocabulary.** One softmax over the whole vocabulary gave the
+    single best label almost the whole probability budget — 115 of 538 videos kept no
     label and most of the rest kept labels from one group only. Softmaxing per
     group alone forced a winner out of every group, so the two-label "screen"
     group labelled every video a screen recording. The negatives in each group's

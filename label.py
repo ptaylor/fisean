@@ -195,8 +195,8 @@ def label_record(open_clip, torch, model, preprocess, tokenizer, text_features,
 
     Scored frame by frame, and the strongest frame is what the record's `score`
     reports. Each label is softmaxed against its own group plus the calibration
-    negatives — never the whole vocabulary. One softmax over all 61 prompts gave
-    the single best label almost the whole probability budget, so a video kept
+    negatives — never the whole vocabulary. One softmax over the whole vocabulary
+    gave the single best label almost the whole probability budget, so a video kept
     labels from one group only; softmaxing per group alone forced a winner out of
     every group, so the two-label "screen" group labelled every video a screen
     recording. The negatives in each group's race are the floor: when nothing in
