@@ -243,10 +243,11 @@ reliable guide: it answered "no" for H.264 in quicktime, which played, and
 `scan --proxy` therefore writes an H.264/MP4 copy for every video a browser
 cannot play, and only for video — an mp3 is left alone, since there is no picture
 to copy and a browser plays it as it is. `--proxy-seconds` caps the copy at a
-minute by default: measured over that library the cap saved 57% of the space and
-the same share of the time, because ten long files held half the unplayable
-footage. At the measured 8–24× realtime, the whole library is 15–20 minutes of
-encoding and about 1.15 GB.
+minute by default — `--proxy-minutes` says the same thing in minutes, and
+`--proxy-minutes max` lifts the cap to copy the whole video: measured over that
+library the cap saved 57% of the space and the same share of the time, because
+ten long files held half the unplayable footage. At the measured 8–24× realtime,
+the whole library is 15–20 minutes of encoding and about 1.15 GB.
 
 Two traps to know before writing any of this:
 
@@ -582,7 +583,7 @@ fisean label DIR --limit 20 --calibrate    # twenty videos, and the score distri
 fisean label DIR --match 2013/ --force    # only paths containing 2013/, labelled again
 python3 label.py DIR --index /tmp/idx     # the labeller on its own, under its own python
 fisean scan DIR --proxy                   # also write MP4 copies a browser can play
-fisean scan DIR --proxy --proxy-seconds 0 # copies of the whole video, not a minute
+fisean scan DIR --proxy --proxy-minutes max # copies of the whole video, not a minute
 fisean scan DIR --index /tmp/idx          # keep the index somewhere else
 fisean scan DIR --dry-run                 # list what would happen, write nothing
 fisean open DIR                           # serve the index in DIR, open a browser

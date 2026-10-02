@@ -99,6 +99,23 @@ PROXY_CRF = 23
 PROXY_PRESET = "veryfast"
 PROXY_AUDIO_KBPS = 64
 
+
+def proxy_minutes(value: str) -> float:
+    """Minutes of video to copy, or the word 'max' for no cap.
+
+    Returned as seconds, so 'max' becomes 0.0 — the no-cap sentinel that
+    `make_proxy` already reads as "copy the whole video". `--proxy-minutes 2` is
+    the same as `--proxy-seconds 120`.
+    """
+    if value.strip().lower() == "max":
+        return 0.0
+    try:
+        return float(value) * 60.0
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"not a number of minutes nor 'max': {value!r}")
+
+
 # What a browser can play. These mirror the lists in the browser half, which is
 # deliberate rather than duplicative: the indexer decides what is worth copying,
 # the browser decides what it will play, and because the browser prefers a copy
@@ -1264,6 +1281,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="also write an MP4 copy a browser can play, for videos it cannot")
     parser.add_argument("--proxy-seconds", type=float, default=PROXY_SECONDS,
                         help="seconds of video to copy (default: %(default)s; 0 for all of it)")
+    parser.add_argument("--proxy-minutes", type=proxy_minutes, default=None,
+                        metavar="MINUTES",
+                        help="minutes of video to copy, or 'max' for no cap "
+                             "(overrides --proxy-seconds)")
     parser.add_argument("--proxy-height", type=int, default=PROXY_HEIGHT,
                         help=f"maximum copy height in pixels, never upscaled "
                              f"(default: {PROXY_HEIGHT})")
@@ -1288,6 +1309,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.proxy_minutes is not None:
+        args.proxy_seconds = args.proxy_minutes
 
     colour = Palette(colour_wanted(sys.stdout) and not args.no_colour)
     glyphs = Glyphs(unicode_ok())
