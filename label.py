@@ -62,7 +62,10 @@ PRETRAINED = "openai"
 FRAMES = 12
 FRAME_WIDTH = 384
 TIMEOUT = 60.0
-LABEL_VERSION = 1
+# Bumped when the scoring or what a record's `label` block means changes, the
+# way scan.py's SCAN_VERSION guards measurements: a record whose labels came
+# from the old one-global-softmax scoring must not be mistaken for current.
+LABEL_VERSION = 2
 # "a photo of X" is the prompt CLIP was trained with. The phrases in the
 # vocabulary are written to slot into it — "a photo of family birthday cottage"
 # is the only place the model ever sees them.
@@ -185,19 +188,29 @@ def extract(source: Path, at: float, target: Path) -> bool:
 
 
 def label_record(open_clip, torch, model, preprocess, tokenizer, text_features,
+                 by_group: dict[str, list[int]],
                  record: dict, root: Path, vocabulary: list[dict], negatives: list[dict],
                  wanted: int, image_module) -> tuple[list[dict], list[dict], str | None]:
     """Score one video, and return the labels it earned.
 
     Scored frame by frame, and the strongest frame is what the record's `score`
-    reports. Averaging the frames' embeddings into one judgement about the whole
-    video was tried and measured: it is exactly wrong for the labels that matter
-    most. A label true in two frames of twelve is averaged against ten unrelated
-    ones and collapses — a bike ride that reads "cycling" 0.93 from its best
-    frame reads 0.02 from the mean — while a scene label true in every frame
-    keeps its score. Agreement across frames is the vocabulary's own `min_frames`,
-    which is a count of frames that passed rather than a diluted average, and it
-    is what decides whether a label is kept at all.
+    reports. Each label is softmaxed against its own group plus the calibration
+    negatives — never the whole vocabulary. One softmax over all 61 prompts gave
+    the single best label almost the whole probability budget, so a video kept
+    labels from one group only; softmaxing per group alone forced a winner out of
+    every group, so the two-label "screen" group labelled every video a screen
+    recording. The negatives in each group's race are the floor: when nothing in
+    a group matches, they win and the group's labels score low, so a video earns
+    labels in several groups at once yet none where nothing is really there.
+
+    Averaging the frames' embeddings into one judgement about the whole video
+    was tried and measured: it is exactly wrong for the labels that matter most.
+    A label true in two frames of twelve is averaged against ten unrelated ones
+    and collapses — a bike ride that reads "cycling" 0.93 from its best frame
+    reads 0.02 from the mean — while a scene label true in every frame keeps its
+    score. Agreement across frames is the vocabulary's own `min_frames`, which
+    is a count of frames that passed rather than a diluted average, and it is
+    what decides whether a label is kept at all.
     """
     technical = record.get("technical") or {}
     duration = technical.get("duration_s")
@@ -215,14 +228,20 @@ def label_record(open_clip, torch, model, preprocess, tokenizer, text_features,
         if not frames:
             return [], [], "no frames could be decoded"
 
+        negative_indices = list(range(len(vocabulary), len(vocabulary) + len(negatives)))
         per_label: dict[str, list[float]] = collections.defaultdict(list)
         with torch.no_grad():
             for frame in frames:
                 image = preprocess(image_module.open(frame).convert("RGB")).unsqueeze(0)
                 vector = model.encode_image(image)
                 vector = vector / vector.norm(dim=-1, keepdim=True)
-                probabilities = (100.0 * vector @ text_features.T).softmax(dim=-1)[0]
-                for entry, score in zip(vocabulary + negatives, probabilities.tolist()):
+                logits = 100.0 * vector @ text_features.T     # (1, labels + negatives)
+                full = logits.softmax(dim=-1)[0]              # the negatives keep this scale
+                for indices in by_group.values():
+                    within = logits[0, indices + negative_indices].softmax(dim=-1)
+                    for offset, index in enumerate(indices):
+                        per_label[vocabulary[index]["text"]].append(within[offset].item())
+                for entry, score in zip(negatives, full[len(vocabulary):].tolist()):
                     per_label[entry["text"]].append(score)
 
     kept = []
@@ -377,7 +396,8 @@ def main(argv: list[str] | None = None) -> int:
             continue                       # an mp3 has no frames to look at
         previous = record.get("label") or {}
         if not args.force and previous.get("model") == MODEL_LABEL \
-                and previous.get("vocabulary") == digest:
+                and previous.get("vocabulary") == digest \
+                and previous.get("version") == LABEL_VERSION:
             continue
         todo.append(asset_id)
     if args.match:
@@ -420,6 +440,17 @@ def main(argv: list[str] | None = None) -> int:
     with torch.no_grad():
         text_features = model.encode_text(tokenizer(texts))
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+    # A label competes against its own group and the calibration negatives, never
+    # the whole vocabulary. One softmax over all 61 prompts gave the single best
+    # label almost the whole probability budget (one group per video); softmaxing
+    # per group alone forced a winner out of every group, so the two-label screen
+    # group labelled every video a screen recording. Adding the negatives to each
+    # group's race gives it a "is anything here at all?" floor: when nothing in a
+    # group matches, the negatives win and the group's labels score low instead of
+    # being handed a winner by default.
+    by_group: dict[str, list[int]] = collections.defaultdict(list)
+    for index, entry in enumerate(vocabulary):
+        by_group[entry["group"]].append(index)
     reporter.working(0, len(todo), "")
     reporter.note(f"model ready in {time.perf_counter() - started:.1f}s")
 
@@ -437,7 +468,7 @@ def main(argv: list[str] | None = None) -> int:
         began = time.perf_counter()
         keep, scores, error = label_record(
             open_clip, torch, model, preprocess, tokenizer, text_features,
-            record, root, vocabulary, negatives, args.frames, Image)
+            by_group, record, root, vocabulary, negatives, args.frames, Image)
         if error:
             failed += 1
             errors.append({"path": relative, "stage": "label", "message": error})

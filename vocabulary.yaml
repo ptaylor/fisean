@@ -19,23 +19,25 @@
 # - **`min_frames`** is how many sampled frames must agree before a label is
 #   recorded at all. It exists because a single frame of a bicycle parked in the
 #   background of a garden party should not label the video "bicycle".
-# - **`threshold`** is the zero-shot similarity below which the label is dropped.
-#   These are starting guesses: calibrate them by running one batch and looking
-#   at where the scores actually sit.
+# - **`threshold`** is the score below which the label is dropped. A label is
+#   softmaxed against its own group plus the calibration negatives below — the
+#   negatives are the "is anything here at all?" floor, so a label scores high
+#   only when it beats both its group and the floor. These numbers are starting
+#   guesses: calibrate them by running one batch and looking at where the scores
+#   actually sit.
 # - Quality is **not** in this file. "Dark", "blurry" and "still" are thresholds
 #   over the numbers in `analysis`, derived by the browser, so they can be
 #   re-tuned without a re-index. See docs/index-format.md, rule 5.
 #
-# **Measured 2026-10-01.** With 57 candidates in one softmax, a label the model
-# reads *correctly* scores 0.3–0.6, not 0.9: on six real videos the concert's
-# stage read "dancing or performing" 0.89 with "a christmas tree" 0.55 behind
-# it, two bike rides read "cycling" 0.93 and 0.91, and a video game's menu read
-# "a screenshot of text" 0.93 — the calibration negative below, doing its job.
-# So the thresholds here are, if anything, too high, and a run that keeps almost
-# nothing is the thresholds talking rather than the model. `fisean label
-# --calibrate` reports where the scores actually fall over the whole library,
-# and the numbers below should be set from that report — which is the loop this
-# file was written for.
+# **Measured 2026-10-01.** A score is now a label's share of a softmax over its
+# own group plus the four calibration negatives — not over the whole 61-prompt
+# vocabulary. The old whole-vocabulary softmax gave the single best label almost
+# the whole budget: 115 of the 538 videos kept no label, and of those that kept
+# any, most kept labels from one group only. Per-group scoring fixes both — on a
+# 120-video sample it wrote 5.4 labels per video on average, 110 of the 120 kept
+# labels in more than one group, and only 6 kept none. The numbers below were set
+# from that sample's `--calibrate` report; the screen-recording label is the one
+# exception, see the screen section.
 
 version: 1
 
@@ -110,10 +112,13 @@ zero_shot:
   # A screen recording is not footage of the world, and a library of home video
   # turns out to hold some: an 11-minute .mov in one real library is a football
   # video game, country menus and all. What found it was the calibration
-  # negative below scoring that frame 0.93 on "a screenshot of text" — so the
-  # case earns a label rather than being left to whatever the scene labels make
-  # of a menu screen.
-  - { text: a screen recording or video game, group: screen, threshold: 0.30, min_frames: 2 }
+  # negative "a screenshot of text" scoring that frame 0.93 — so the case earns
+  # a label rather than being left to whatever the scene labels make of a menu
+  # screen. The threshold is deliberately high: a camera video with a burned-in
+  # date stamp reads as "screen" too, and at 0.30 this label fired on 72% of a
+  # 120-video sample. A real screen recording scores 0.9+ in most of its frames,
+  # which is what 0.85 asks for.
+  - { text: a screen recording or video game, group: screen, threshold: 0.85, min_frames: 2 }
   - { text: a title card or words on screen,  group: screen, threshold: 0.34, min_frames: 2 }
 
   # --------------------------------------------------------------------- mood

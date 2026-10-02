@@ -540,6 +540,15 @@ reachable from the browser.
     across frames is the vocabulary's `min_frames`, which is a count rather than a
     diluted average, and the `score` written to a record is the frame that scored
     highest.
+  - **Softmax each label against its own group plus the calibration negatives,
+    never the whole vocabulary.** One softmax over all 61 prompts gave the single
+    best label almost the whole probability budget — 115 of 538 videos kept no
+    label and most of the rest kept labels from one group only. Softmaxing per
+    group alone forced a winner out of every group, so the two-label "screen"
+    group labelled every video a screen recording. The negatives in each group's
+    race are the floor: when nothing in a group matches, they win and the group's
+    labels score low, so a video earns labels in several groups at once yet none
+    where nothing is there.
   - **The vocabulary is data, not code.** Labels, thresholds and `min_frames` live
     in `vocabulary.yaml` and are meant to be edited after looking at real results.
     Editing it means re-running `fisean label`, never re-scanning: labelling writes
