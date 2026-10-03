@@ -51,6 +51,9 @@ const state = {
   manifest: null,
   config: null,
   assets: [],
+  // Star ratings, keyed by asset id: the viewer's own data, kept in the
+  // ratings.json the server manages beside the index (never in the index).
+  ratings: {},
   selected: null,
   still: 0,
   filters: new Map(),   // axis -> Set(values)
@@ -192,6 +195,12 @@ const AXES = [
   { key: 'format', title: 'Format',
     values: a => [[container(a), container(a)]],
     label: v => v },
+  { key: 'rating', title: 'Rating',
+    values: a => {
+      const stars = state.ratings[a.id] || 0;
+      return stars ? [[`${stars} star${stars > 1 ? 's' : ''}`, `r:${stars}`]] : [['unrated', 'r:0']];
+    },
+    label: v => v === 'r:0' ? 'unrated' : `${v.slice(2)} star${v.slice(2) === '1' ? '' : 's'}` },
 ];
 
 const axisFor = key => AXES.find(axis => axis.key === key);
@@ -387,9 +396,14 @@ function renderFacet(axis) {
     }
   }
   const chosen = state.filters.get(axis.key) || new Set();
-  const values = [...counts.entries()].sort((x, y) => axis.key === 'when'
-    ? String(y[0]).localeCompare(String(x[0]))
-    : y[1] - x[1] || String(x[0]).localeCompare(String(y[0])));
+  const values = [...counts.entries()].sort((x, y) => {
+    if (axis.key === 'when') return String(y[0]).localeCompare(String(x[0]));
+    if (axis.key === 'rating') {
+      const rank = v => (v === 'r:0' ? -1 : parseInt(v.slice(2), 10));
+      return rank(y[0]) - rank(x[0]) || y[1] - x[1];
+    }
+    return y[1] - x[1] || String(x[0]).localeCompare(String(y[0]));
+  });
 
   const chips = values.map(([value, count]) => {
     const pressed = chosen.has(value);
@@ -474,6 +488,7 @@ function renderRow(asset) {
     strip,
     el('div', { class: 'row-meta' },
       el('div', { class: 'name', text: fileName(asset.source?.path) }),
+      starStrip(asset),
       el('div', { class: 'when' },
         el('span', { class: approximate ? 'approx' : '', text: when(asset.captured?.at) }),
         el('span', { text: '·' }),
@@ -563,6 +578,7 @@ function renderCard(asset) {
         el('span', { text: '·' }),
         el('span', { text: container(asset) })),
       el('div', { class: 'name', text: fileName(asset.source?.path), title: asset.source?.path || '' }),
+      starStrip(asset),
       el('div', { class: 'tags' }, tags)),
   );
 }
@@ -702,6 +718,9 @@ function renderDrawer() {
   }
   body.append(el('div', { class: 'path mono', text: path || '(no path recorded)' }));
 
+  body.append(el('h3', { text: 'Rating' }));
+  body.append(el('div', { class: 'rating-box' }, starStrip(asset, true)));
+
   body.append(el('h3', { text: 'When' }));
   body.append(el('dl', {},
     el('dt', { text: 'captured' }),
@@ -792,6 +811,57 @@ function toggle(axisKey, value) {
   if (chosen.has(value)) chosen.delete(value); else chosen.add(value);
   if (chosen.size) state.filters.set(axisKey, chosen); else state.filters.delete(axisKey);
   render();
+}
+
+/* ----------------------------------------------------------------- rating */
+
+// Five stars, click to set, click the same star again to clear. Drawn with ★ and
+// ☆ rather than filled glyphs from a font, so the state is visible without colour
+// and a screen reader still hears the number.
+function starStrip(asset, big = false) {
+  const current = state.ratings[asset.id] || 0;
+  return el('span', { class: `stars${big ? ' big' : ''}` },
+    Array.from({ length: 5 }, (_, i) => {
+      const n = i + 1;
+      const on = n <= current;
+      return el('button', {
+        class: `star${on ? ' on' : ''}`,
+        text: on ? '★' : '☆',
+        title: current === n ? 'clear the rating' : `${n} star${n > 1 ? 's' : ''}`,
+        'aria-label': `${n} star${n > 1 ? 's' : ''}`,
+        'aria-pressed': String(on),
+        onclick: event => {
+          event.stopPropagation();
+          setRating(asset.id, current === n ? 0 : n);
+        },
+      });
+    }));
+}
+
+async function setRating(id, stars) {
+  try {
+    const response = await fetch('/rating', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, stars }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const saved = await response.json();
+    if (saved.stars === 0) delete state.ratings[id];
+    else state.ratings[id] = saved.stars;
+    render();
+    // The drawer is not rebuilt by render(), so its own stars are refreshed in
+    // place - a full renderDrawer() would stop a video that is playing.
+    if (state.selected === id) {
+      const box = document.querySelector('#drawer .rating-box');
+      if (box) {
+        const asset = state.assets.find(a => a.id === id);
+        if (asset) box.replaceChildren(starStrip(asset, true));
+      }
+    }
+  } catch (error) {
+    toast('could not save the rating');
+  }
 }
 
 /* --------------------------------------------------------------- clipboard */
@@ -924,9 +994,10 @@ async function start() {
   let manifest, config;
   showLoading('reading the index…');
   try {
-    const [manifestResponse, configResponse] = await Promise.all([
+    const [manifestResponse, configResponse, ratingsResponse] = await Promise.all([
       fetch('/index/manifest.json', { cache: 'no-store' }),
       fetch('/config.json', { cache: 'no-store' }),
+      fetch('/ratings.json', { cache: 'no-store' }),
     ]);
     if (!manifestResponse.ok) throw new Error(`manifest.json returned ${manifestResponse.status}`);
     manifest = await manifestResponse.json();
@@ -935,6 +1006,12 @@ async function start() {
     // index versions this page is allowed to read.
     config = configResponse.ok ? await configResponse.json() : {};
     SUPPORTED_INDEX_VERSIONS = new Set(config.supported_index_versions || []);
+    // Ratings are the server's too, and may be empty: a library nobody has rated
+    // has no ratings.json at all.
+    if (ratingsResponse.ok) {
+      const ratings = await ratingsResponse.json();
+      state.ratings = ratings.ratings || {};
+    }
   } catch (error) {
     fatal('No index to read',
       'The browser could not load manifest.json from the index directory.',

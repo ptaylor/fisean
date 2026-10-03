@@ -23,6 +23,11 @@ fixtures/media/
 # fixture lives in fixtures/fisean-index and must stay tracked.
 /fisean-index/
 
+# The browser half's one write: star ratings, kept in ratings.json beside the
+# index it describes. Never committed — a committed copy would be one viewer's
+# data posing as the library's.
+ratings.json
+
 # The indexer needs nothing else ignored: ffmpeg is run as a program and has no
 # build output, and the models `fisean label` uses are cached by open_clip
 # outside the repository, in ~/.cache/clip. **Correction (2026-10-01):** this

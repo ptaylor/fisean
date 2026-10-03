@@ -81,7 +81,8 @@ Rules that keep the seam honest:
 - The browser never invokes `ffmpeg` and never decodes media. It does not read
   the media directory either, with **one documented exception**: serving the
   original bytes for playback, read-only. If it needs a *fact*, that fact belongs
-  in the index.
+  in the index. Its **one write** is the star ratings, kept in `ratings.json`
+  beside the index — viewer data, never the index contract itself.
 - The indexer serves no HTTP and owns no UI.
 - **The entry point dispatches; it does not implement.** `fisean.py` maps a
   subcommand to a program and `exec`s it, so signals, exit codes and output are
@@ -144,7 +145,12 @@ Numbered, as agreed, so that a later change can be checked against them.
 9. Shows the stills as the primary browsing surface, and looks good doing it.
 10. Plays a video where the browser can decode it, and otherwise offers a
     one-click **copy of the full path** so it can be opened in a player.
-11. Reads only the index, save for the one documented playback exception.
+11. Reads only the index, save for the one documented playback exception, and
+    keeps the star ratings — its one write — in `ratings.json` beside the index.
+12. Lets the viewer rate each video from 0 to 5 stars and filter by rating.
+    **Addition (2026-10-03):** ratings are the viewer's, not the library's, so
+    they live in `ratings.json` beside the index rather than in the record
+    files, which a rescan rewrites without knowing or caring about them.
 
 ### Non-goals
 
